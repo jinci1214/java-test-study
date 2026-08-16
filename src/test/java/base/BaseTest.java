@@ -14,7 +14,7 @@ public class BaseTest {
     private static final Logger log =
             LoggerFactory.getLogger(BaseTest.class);
 
-    @BeforeSuite
+    @BeforeSuite(alwaysRun = true)
     public void beforeSuite() {
 
         log.info(
