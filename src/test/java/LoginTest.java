@@ -6,6 +6,7 @@ import model.response.LoginResponse;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.testng.Assert.*;
 
 public class LoginTest extends BaseTest {
@@ -36,6 +37,14 @@ public class LoginTest extends BaseTest {
 
         assertNotNull(token);
         assertFalse(token.isBlank());
+
+        response.then()
+                .assertThat()
+                .body(
+                        matchesJsonSchemaInClasspath(
+                                "schemas/login-success-schema.json"
+                        )
+                );
     }
 
     @DataProvider(name = "invalidLoginData")
