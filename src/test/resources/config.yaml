@@ -1,0 +1,8 @@
+defaultEnvironment: mock
+
+environments:
+  mock:
+    baseUrl: "http://localhost:8089"
+
+  test:
+    baseUrl: "https://jsonplaceholder.typicode.com"

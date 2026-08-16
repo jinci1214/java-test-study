@@ -1,0 +1,23 @@
+# Maven构建产物
+target/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# macOS
+.DS_Store
+
+# 测试报告
+allure-results/
+allure-report/
+
+# 日志
+logs/
+*.log
+
+# 本地敏感配置
+.env
+config-local.yaml
