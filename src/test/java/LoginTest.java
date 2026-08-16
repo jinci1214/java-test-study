@@ -16,7 +16,11 @@ import static org.testng.Assert.*;
 @Feature("用户认证")
 public class LoginTest extends BaseTest {
 
-    @Test
+    @Test(groups = {
+            "smoke",
+            "regression",
+            "auth"
+    })
     @Story("用户登录")
     @Severity(CRITICAL)
     @Description("使用正确的用户名和密码登录，验证相应结构和Token")
@@ -98,7 +102,13 @@ public class LoginTest extends BaseTest {
 
 
 
-    @Test(dataProvider = "invalidLoginData")
+    @Test(
+            dataProvider = "invalidLoginData",
+            groups = {
+                    "regression",
+                    "auth"
+            }
+    )
     @Story("登录异常校验")
     @Severity(CRITICAL)
     @Description("使用无效或不完整的登录参数，验证接口错误响应")

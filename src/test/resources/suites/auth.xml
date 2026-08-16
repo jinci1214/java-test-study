@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="认证鉴权测试套件">
+
+    <test name="认证鉴权场景">
+
+        <groups>
+            <run>
+                <include name="auth"/>
+            </run>
+        </groups>
+
+        <classes>
+            <class name="LoginTest"/>
+            <class name="UserTest"/>
+        </classes>
+
+    </test>
+
+</suite>
