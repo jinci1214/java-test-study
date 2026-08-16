@@ -109,8 +109,7 @@ public class LoginTest extends BaseTest {
         Response response =
                 LoginApi.login(request);
 
-        System.out.println("当前登录场景：" + scenario);
-        System.out.println(response.asPrettyString());
+
 
         assertEquals(
                 response.statusCode(),

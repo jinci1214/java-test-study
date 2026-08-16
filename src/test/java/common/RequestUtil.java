@@ -3,6 +3,8 @@ package common;
 import config.Config;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.restassured.RestAssured.*;
 
@@ -10,6 +12,9 @@ import static io.restassured.RestAssured.*;
 public class RequestUtil {
 
     private RequestUtil(){}
+
+    private static final Logger log =
+            LoggerFactory.getLogger(RequestUtil.class);
 
     private static RequestSpecification createRequest(
             String baseUrl,
@@ -41,9 +46,22 @@ public class RequestUtil {
             String path,
             boolean needAuth
     ){
-        return createRequest(baseUrl,needAuth)
-                .when()
-                .get(path);
+        log.info(
+                "发送HTTP请求：method=GET,url={}{}",
+                baseUrl,
+                path
+        );
+        Response response =
+                createRequest(baseUrl,needAuth)
+                        .when()
+                        .get(path);
+        log.info(
+                "收到HTTP响应：method=GET,path={},status={}",
+                path,
+                response.statusCode()
+        );
+
+       return response;
     }
 
     public static Response post(String path,Object body,boolean needAuth){
@@ -62,10 +80,23 @@ public class RequestUtil {
             Object body,
             boolean needAuth
     ){
-        return createRequest(baseUrl,needAuth)
-                .body(body)
-                .when()
-                .post(path);
+        log.info(
+                "发送HTTP请求：method=POST,url={}{}",
+                baseUrl,
+                path
+        );
+        Response response =
+                createRequest(baseUrl,needAuth)
+                        .body(body)
+                        .when()
+                        .post(path);
+
+        log.info(
+                "收到HTTP响应，method=POST,path={},status={}",
+                path,
+                response.statusCode()
+        );
+        return response;
     }
 
 }

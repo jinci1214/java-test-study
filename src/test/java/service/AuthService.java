@@ -25,7 +25,7 @@ public class AuthService {
         if(response.statusCode() !=200){
             throw new IllegalStateException(
                     "登录失败，HTTP状态码："+response.statusCode()
-                    +",响应："+response.asString()
+
             );
         }
 

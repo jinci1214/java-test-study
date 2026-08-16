@@ -1,6 +1,8 @@
 package mock;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
@@ -10,12 +12,34 @@ public final class LoginMockServer {
 
     private static WireMockServer server;
 
+    private static final Logger log =
+            LoggerFactory.getLogger(LoginMockServer.class);
+
     private LoginMockServer() {
     }
 
     public static void start() {
+
+        if(server != null && server.isRunning()){
+            log.warn("WireMock已经启动，跳过重复启动");
+            return;
+        }
+
         server = new WireMockServer(PORT);
-        server.start();
+        try{
+            server.start();
+        }catch (RuntimeException exception){
+            server = null;
+
+            log.error(
+                    "WireMock启动失败，端口：{}",
+                    PORT,
+                    exception
+            );
+            throw exception;
+        }
+
+
 
         server.stubFor(
                 post(urlEqualTo("/login"))
@@ -174,13 +198,27 @@ public final class LoginMockServer {
         );
 
 
-        System.out.println("Mock登录服务启动成功");
+        log.info(
+                "WireMock启动成功，端口：{}",
+                PORT
+        );
     }
 
     public static void stop() {
-        if (server != null) {
+        if (server == null) {
+            log.debug("WireMock未创建，无需停止");
+            return;
+        }
+        if(!server.isRunning()){
+            log.debug("WireMock未运行，无需停止");
+            server = null;
+            return;
+        }
+        try{
             server.stop();
-            System.out.println("Mock登录服务已停止");
+            log.info("WireMock已停止");
+        }finally {
+            server = null;
         }
     }
 }

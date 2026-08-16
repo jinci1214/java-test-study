@@ -73,11 +73,9 @@ public class UserTest extends BaseTest {
                 TokenUtil.setToken(token);
             }
 
-            System.out.println("当前测试场景："+scenario);
 
             Response response = UserApi.getUser();
 
-            System.out.println(response.asPrettyString());
 
             assertEquals(
                     response.statusCode(),
