@@ -3,17 +3,26 @@ package base;
 import common.TokenUtil;
 import config.Config;
 import mock.LoginMockServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeSuite;
 import service.AuthService;
 
 public class BaseTest {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(BaseTest.class);
+
     @BeforeSuite
     public void beforeSuite() {
 
-        System.out.println("当前测试环境："+ Config.getEnvironment());
-        System.out.println("当前服务地址："+Config.getBaseUrl());
+        log.info(
+                "测试套件开始，环境：{},服务环境：{}",
+                Config.getEnvironment(),
+                Config.getBaseUrl()
+
+        );
         LoginMockServer.start();
 
         AuthService.loginAndSaveToken(
@@ -26,6 +35,7 @@ public class BaseTest {
     public void afterSuite() {
         TokenUtil.clear();
         LoginMockServer.stop();
+        log.info("测试套件结束");
     }
 }
 
