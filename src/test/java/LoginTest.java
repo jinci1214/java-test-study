@@ -1,23 +1,31 @@
 import api.LoginApi;
 import base.BaseTest;
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import model.request.LoginRequest;
 import model.response.LoginResponse;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static io.qameta.allure.SeverityLevel.CRITICAL;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.testng.Assert.*;
 
+
+@Epic("接口自动化测试")
+@Feature("用户认证")
 public class LoginTest extends BaseTest {
 
     @Test
+    @Story("用户登录")
+    @Severity(CRITICAL)
+    @Description("使用正确的用户名和密码登录，验证相应结构和Token")
     public void loginSuccessTest() {
         LoginRequest request = new LoginRequest("admin", "123456");
 
         Response response = LoginApi.login(request);
 
-        System.out.println(response.asPrettyString());
+
 
         assertEquals(response.statusCode(), 200);
 
@@ -51,40 +59,35 @@ public class LoginTest extends BaseTest {
     public Object[][] invalidLoginData() {
         return new Object[][]{
                 {
-                        "",
-                        "123456",
+                        new LoginRequest("", "123456"),
                         400,
                         1002,
                         "用户名不能为空",
                         "用户名为空"
                 },
                 {
-                        "   ",
-                        "123456",
+                        new LoginRequest("   ", "123456"),
                         400,
                         1002,
                         "用户名不能为空",
                         "用户名全是空格"
                 },
                 {
-                        "admin",
-                        "",
+                        new LoginRequest("admin", ""),
                         400,
                         1003,
                         "密码不能为空",
                         "密码为空"
                 },
                 {
-                        "admin",
-                        "wrong-password",
+                        new LoginRequest("admin", "wrong-password"),
                         401,
                         1001,
                         "用户名或密码错误",
                         "密码错误"
                 },
                 {
-                        "unknown-user",
-                        "123456",
+                        new LoginRequest("unknown-user", "123456"),
                         401,
                         1001,
                         "用户名或密码错误",
@@ -94,17 +97,19 @@ public class LoginTest extends BaseTest {
     }
 
 
+
     @Test(dataProvider = "invalidLoginData")
+    @Story("登录异常校验")
+    @Severity(CRITICAL)
+    @Description("使用无效或不完整的登录参数，验证接口错误响应")
     public void loginFailureTest(
-            String username,
-            String password,
+            LoginRequest request,
             int expectedHttpStatus,
             int expectedCode,
             String expectedMessage,
             String scenario
     ) {
-        LoginRequest request =
-                new LoginRequest(username, password);
+
 
         Response response =
                 LoginApi.login(request);

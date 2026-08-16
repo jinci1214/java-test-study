@@ -21,3 +21,6 @@ logs/
 # 本地敏感配置
 .env
 config-local.yaml
+
+# Allure运行时缓存
+.allure/
