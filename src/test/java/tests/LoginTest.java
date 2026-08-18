@@ -1,3 +1,5 @@
+package tests;
+
 import api.LoginApi;
 import base.BaseTest;
 import io.qameta.allure.*;

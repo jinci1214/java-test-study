@@ -9,9 +9,8 @@
             </run>
         </groups>
 
-        <classes>
-            <class name="LoginTest"/>
-            <class name="UserTest"/>
-        </classes>
+        <packages>
+            <package name="tests"/>
+        </packages>
     </test>
 </suite>
