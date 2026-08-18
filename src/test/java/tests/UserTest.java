@@ -1,3 +1,5 @@
+package tests;
+
 import api.UserApi;
 import base.BaseTest;
 
