@@ -18,11 +18,13 @@ import static org.testng.Assert.*;
 @Feature("用户认证")
 public class LoginTest extends BaseTest {
 
-    @Test(groups = {
-            "smoke",
-            "regression",
-            "auth"
-    })
+    @Test(
+            groups = {
+                    "smoke",
+                    "regression",
+                    "auth"
+            }
+    )
     @Story("用户登录")
     @Severity(CRITICAL)
     @Description("使用正确的用户名和密码登录，验证相应结构和Token")
@@ -30,7 +32,6 @@ public class LoginTest extends BaseTest {
         LoginRequest request = new LoginRequest("admin", "123456");
 
         Response response = LoginApi.login(request);
-
 
 
         assertEquals(response.statusCode(), 200);
@@ -103,7 +104,6 @@ public class LoginTest extends BaseTest {
     }
 
 
-
     @Test(
             dataProvider = "invalidLoginData",
             groups = {
@@ -125,7 +125,6 @@ public class LoginTest extends BaseTest {
 
         Response response =
                 LoginApi.login(request);
-
 
 
         assertEquals(
