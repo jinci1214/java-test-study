@@ -1,6 +1,7 @@
 package tests;
 
 import api.UserApi;
+import assertions.ApiAssertions;
 import base.BaseTest;
 
 import common.TokenUtil;
@@ -101,20 +102,12 @@ public class UserTest extends BaseTest {
             Response response = UserApi.getUser();
 
 
-            assertEquals(
-                    response.statusCode(),
+            ApiAssertions.assertErrorResponse(
+                    response,
                     401,
-                    scenario+"时，HTTP状态码应该是401"
-            );
-            assertEquals(
-                    response.jsonPath().getInt("code"),
                     401,
-                    scenario+"时，业务状态码应该是401"
-            );
-            assertEquals(
-                    response.jsonPath().getString("message"),
                     "未授权访问",
-                    scenario+"时，错误信息不正确"
+                    scenario
             );
 
         } finally {

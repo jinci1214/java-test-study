@@ -1,6 +1,7 @@
 package tests;
 
 import api.LoginApi;
+import assertions.ApiAssertions;
 import base.BaseTest;
 import io.qameta.allure.*;
 import io.restassured.response.Response;
@@ -127,26 +128,16 @@ public class LoginTest extends BaseTest {
                 LoginApi.login(request);
 
 
-        assertEquals(
-                response.statusCode(),
+        ApiAssertions.assertErrorResponse(
+                response,
                 expectedHttpStatus,
-                scenario + "：HTTP状态码错误"
+                expectedCode,
+                expectedMessage,
+                scenario
         );
 
         LoginResponse loginResponse =
                 response.as(LoginResponse.class);
-
-        assertEquals(
-                loginResponse.getCode(),
-                expectedCode,
-                scenario + "：业务状态码错误"
-        );
-
-        assertEquals(
-                loginResponse.getMessage(),
-                expectedMessage,
-                scenario + "：错误消息不正确"
-        );
 
         assertNull(
                 loginResponse.getData(),
