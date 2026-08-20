@@ -7,6 +7,7 @@ import io.qameta.allure.*;
 import io.restassured.response.Response;
 import model.request.LoginRequest;
 import model.response.LoginResponse;
+import model.testcase.LoginFailureCase;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -67,39 +68,49 @@ public class LoginTest extends BaseTest {
     public Object[][] invalidLoginData() {
         return new Object[][]{
                 {
+                    new LoginFailureCase(
                         new LoginRequest("", "123456"),
                         400,
                         1002,
                         "用户名不能为空",
                         "用户名为空"
+                    )
                 },
                 {
+                    new LoginFailureCase(
                         new LoginRequest("   ", "123456"),
                         400,
                         1002,
                         "用户名不能为空",
                         "用户名全是空格"
+                    )
                 },
                 {
+                    new LoginFailureCase(
                         new LoginRequest("admin", ""),
                         400,
                         1003,
                         "密码不能为空",
                         "密码为空"
+                    )
                 },
                 {
+                    new LoginFailureCase(
                         new LoginRequest("admin", "wrong-password"),
                         401,
                         1001,
                         "用户名或密码错误",
                         "密码错误"
+                    )
                 },
                 {
+                    new LoginFailureCase(
                         new LoginRequest("unknown-user", "123456"),
                         401,
                         1001,
                         "用户名或密码错误",
                         "用户不存在"
+                    )
                 }
         };
     }
@@ -116,24 +127,43 @@ public class LoginTest extends BaseTest {
     @Severity(CRITICAL)
     @Description("使用无效或不完整的登录参数，验证接口错误响应")
     public void loginFailureTest(
-            LoginRequest request,
-            int expectedHttpStatus,
-            int expectedCode,
-            String expectedMessage,
-            String scenario
+            LoginFailureCase testCase
     ) {
+
+        Allure.getLifecycle().updateTestCase(
+                result -> result.setName(
+                        "登录失败：" + testCase.scenario()
+                )
+        );
+        Allure.parameter(
+                "测试场景",
+                testCase.scenario()
+        );
+        Allure.parameter(
+                "请求对象",
+                testCase.request().toString()
+        );
+        Allure.parameter(
+                "预期HTTP状态码",
+                testCase.expectedHttpStatus()
+        );
+        Allure.parameter(
+                "预期业务码",
+                testCase.expectedCode()
+        );
+
 
 
         Response response =
-                LoginApi.login(request);
+                LoginApi.login(testCase.request());
 
 
         ApiAssertions.assertErrorResponse(
                 response,
-                expectedHttpStatus,
-                expectedCode,
-                expectedMessage,
-                scenario
+                testCase.expectedHttpStatus(),
+                testCase.expectedCode(),
+                testCase.expectedMessage(),
+                testCase.scenario()
         );
 
         LoginResponse loginResponse =
@@ -141,7 +171,7 @@ public class LoginTest extends BaseTest {
 
         assertNull(
                 loginResponse.getData(),
-                scenario + "：登录失败不应该返回data"
+                testCase.scenario() + "：登录失败不应该返回data"
         );
     }
 }
