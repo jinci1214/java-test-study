@@ -3,6 +3,7 @@ package tests;
 import api.LoginApi;
 import assertions.ApiAssertions;
 import base.BaseTest;
+import data.LoginTestDataLoader;
 import io.qameta.allure.*;
 import io.restassured.response.Response;
 import model.request.LoginRequest;
@@ -10,6 +11,8 @@ import model.response.LoginResponse;
 import model.testcase.LoginFailureCase;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import java.util.List;
 
 import static io.qameta.allure.SeverityLevel.CRITICAL;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
@@ -66,53 +69,20 @@ public class LoginTest extends BaseTest {
 
     @DataProvider(name = "invalidLoginData")
     public Object[][] invalidLoginData() {
-        return new Object[][]{
-                {
-                    new LoginFailureCase(
-                        new LoginRequest("", "123456"),
-                        400,
-                        1002,
-                        "用户名不能为空",
-                        "用户名为空"
-                    )
-                },
-                {
-                    new LoginFailureCase(
-                        new LoginRequest("   ", "123456"),
-                        400,
-                        1002,
-                        "用户名不能为空",
-                        "用户名全是空格"
-                    )
-                },
-                {
-                    new LoginFailureCase(
-                        new LoginRequest("admin", ""),
-                        400,
-                        1003,
-                        "密码不能为空",
-                        "密码为空"
-                    )
-                },
-                {
-                    new LoginFailureCase(
-                        new LoginRequest("admin", "wrong-password"),
-                        401,
-                        1001,
-                        "用户名或密码错误",
-                        "密码错误"
-                    )
-                },
-                {
-                    new LoginFailureCase(
-                        new LoginRequest("unknown-user", "123456"),
-                        401,
-                        1001,
-                        "用户名或密码错误",
-                        "用户不存在"
-                    )
-                }
-        };
+
+        List<LoginFailureCase> cases =
+                LoginTestDataLoader.loadFailureCases();
+
+        Object[][] testData =
+                new Object[cases.size()][1];
+
+        for (int index = 0; index < cases.size(); index++) {
+
+            testData[index][0] =
+                    cases.get(index);
+        }
+        return testData;
+
     }
 
 
@@ -151,7 +121,6 @@ public class LoginTest extends BaseTest {
                 "预期业务码",
                 testCase.expectedCode()
         );
-
 
 
         Response response =
