@@ -5,6 +5,7 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import report.AllureAttachmentUtil;
 
 import static io.restassured.RestAssured.*;
 
@@ -46,6 +47,16 @@ public class RequestUtil {
             String path,
             boolean needAuth
     ){
+        boolean hasAuthorization =
+                needAuth && TokenUtil.hasToken();
+
+        AllureAttachmentUtil.attachRequest(
+                "GET",
+                baseUrl + path,
+                hasAuthorization,
+                null
+        );
+
         log.info(
                 "发送HTTP请求：method=GET,url={}{}",
                 baseUrl,
@@ -55,6 +66,12 @@ public class RequestUtil {
                 createRequest(baseUrl,needAuth)
                         .when()
                         .get(path);
+
+        AllureAttachmentUtil.attachResponse(
+                "GET",
+                response
+        );
+
         log.info(
                 "收到HTTP响应：method=GET,path={},status={}",
                 path,
@@ -80,6 +97,16 @@ public class RequestUtil {
             Object body,
             boolean needAuth
     ){
+        boolean hasAuthorization =
+                needAuth && TokenUtil.hasToken();
+
+        AllureAttachmentUtil.attachRequest(
+                "POST",
+                baseUrl + path,
+                hasAuthorization,
+                body
+        );
+
         log.info(
                 "发送HTTP请求：method=POST,url={}{}",
                 baseUrl,
@@ -90,6 +117,11 @@ public class RequestUtil {
                         .body(body)
                         .when()
                         .post(path);
+
+        AllureAttachmentUtil.attachResponse(
+                "POST",
+                response
+        );
 
         log.info(
                 "收到HTTP响应，method=POST,path={},status={}",
