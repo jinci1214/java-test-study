@@ -71,6 +71,36 @@ public final class AllureAttachmentUtil {
         );
     }
 
+    public static void attachDatabaseOperation(
+            String operation,
+            String sql,
+            String parameters,
+            String result
+    ) {
+
+        if (!hasActiveTest()) {
+            return;
+        }
+
+        String content = """
+                SQL:
+                %s
+                Parameters:
+                %s
+                Result:
+                %s
+                """.formatted(
+                sql,
+                parameters == null ? "<无>" : parameters,
+                result
+        );
+
+        addTextAttachment(
+                "数据库操作：" + operation,
+                content
+        );
+    }
+
     private static String bodyToText(Object body) {
 
         if (body == null) {

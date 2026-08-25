@@ -20,7 +20,7 @@ public abstract class DatabaseTestBase {
 
     private final List<Long> temporaryUserIds = new ArrayList<>();
 
-    @BeforeMethod
+    @BeforeMethod(alwaysRun = true)
     public void requireDatabasePassword() {
         if (!DatabaseConfig.hasPassword()) {
             throw new SkipException(

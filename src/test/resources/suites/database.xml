@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="数据库自动化测试套件">
+
+    <test name="数据库与接口联合测试">
+
+        <groups>
+            <run>
+                <include name="database"/>
+            </run>
+        </groups>
+
+        <packages>
+            <package name="database"/>
+            <package name="tests"/>
+        </packages>
+
+    </test>
+
+</suite>
