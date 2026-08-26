@@ -151,6 +151,417 @@ public final class LoginMockServer {
 
 
 
+
+        server.stubFor(
+                get(urlPathEqualTo("/users"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withQueryParam("page", equalTo("1"))
+                        .withQueryParam("pageSize", equalTo("2"))
+                        .withQueryParam(
+                                "role",
+                                matching("^(?!(?:tester|developer)$).+$")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(400)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 400,
+                                                  "message": "不支持的角色筛选条件"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlPathEqualTo("/users"))
+                        .atPriority(2)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withQueryParam("page", equalTo("1"))
+                        .withQueryParam("pageSize", equalTo("2"))
+                        .withQueryParam("role", equalTo("developer"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "success",
+                                                  "data": {
+                                                    "page": 1,
+                                                    "pageSize": 2,
+                                                    "total": 1,
+                                                    "items": [
+                                                      {
+                                                        "id": 3,
+                                                        "username": "developer",
+                                                        "role": "developer"
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlPathEqualTo("/users"))
+                        .atPriority(2)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withQueryParam("page", equalTo("1"))
+                        .withQueryParam("pageSize", equalTo("2"))
+                        .withQueryParam("sortBy", equalTo("username"))
+                        .withQueryParam("sortOrder", equalTo("asc"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "success",
+                                                  "data": {
+                                                    "page": 1,
+                                                    "pageSize": 2,
+                                                    "total": 3,
+                                                    "items": [
+                                                      {
+                                                        "id": 1,
+                                                        "username": "admin",
+                                                        "role": "tester"
+                                                      },
+                                                      {
+                                                        "id": 2,
+                                                        "username": "tester",
+                                                        "role": "tester"
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlPathEqualTo("/users"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withQueryParam("page", equalTo("1"))
+                        .withQueryParam("pageSize", equalTo("2"))
+                        .withQueryParam("role", equalTo("tester"))
+                        .withQueryParam("sortBy", equalTo("username"))
+                        .withQueryParam("sortOrder", equalTo("desc"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "success",
+                                                  "data": {
+                                                    "page": 1,
+                                                    "pageSize": 2,
+                                                    "total": 2,
+                                                    "items": [
+                                                      {
+                                                        "id": 2,
+                                                        "username": "tester",
+                                                        "role": "tester"
+                                                      },
+                                                      {
+                                                        "id": 1,
+                                                        "username": "admin",
+                                                        "role": "tester"
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlPathEqualTo("/users"))
+                        .atPriority(2)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withQueryParam("page", equalTo("1"))
+                        .withQueryParam("pageSize", equalTo("2"))
+                        .withQueryParam("sortBy", equalTo("username"))
+                        .withQueryParam("sortOrder", equalTo("desc"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "success",
+                                                  "data": {
+                                                    "page": 1,
+                                                    "pageSize": 2,
+                                                    "total": 3,
+                                                    "items": [
+                                                      {
+                                                        "id": 2,
+                                                        "username": "tester",
+                                                        "role": "tester"
+                                                      },
+                                                      {
+                                                        "id": 1,
+                                                        "username": "admin",
+                                                        "role": "tester"
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlPathEqualTo("/users"))
+                        .atPriority(2)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withQueryParam("page", equalTo("1"))
+                        .withQueryParam("pageSize", equalTo("2"))
+                        .withQueryParam("role", equalTo("tester"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "success",
+                                                  "data": {
+                                                    "page": 1,
+                                                    "pageSize": 2,
+                                                    "total": 2,
+                                                    "items": [
+                                                      {
+                                                        "id": 1,
+                                                        "username": "admin",
+                                                        "role": "tester"
+                                                      },
+                                                      {
+                                                        "id": 2,
+                                                        "username": "tester",
+                                                        "role": "tester"
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlPathEqualTo("/users"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withQueryParam("page", equalTo("3"))
+                        .withQueryParam("pageSize", equalTo("2"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "success",
+                                                  "data": {
+                                                    "page": 3,
+                                                    "pageSize": 2,
+                                                    "total": 3,
+                                                    "items": []
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlPathEqualTo("/users"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withQueryParam("page", equalTo("2"))
+                        .withQueryParam("pageSize", equalTo("2"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "success",
+                                                  "data": {
+                                                    "page": 2,
+                                                    "pageSize": 2,
+                                                    "total": 3,
+                                                    "items": [
+                                                      {
+                                                        "id": 3,
+                                                        "username": "developer",
+                                                        "role": "developer"
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlPathEqualTo("/users"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withQueryParam("page", equalTo("1"))
+                        .withQueryParam("pageSize", equalTo("1"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "success",
+                                                  "data": {
+                                                    "page": 1,
+                                                    "pageSize": 1,
+                                                    "total": 3,
+                                                    "items": [
+                                                      {
+                                                        "id": 1,
+                                                        "username": "admin",
+                                                        "role": "tester"
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlPathEqualTo("/users"))
+                        .atPriority(10)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withQueryParam("page", equalTo("1"))
+                        .withQueryParam("pageSize", equalTo("2"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "success",
+                                                  "data": {
+                                                    "page": 1,
+                                                    "pageSize": 2,
+                                                    "total": 3,
+                                                    "items": [
+                                                      {
+                                                        "id": 1,
+                                                        "username": "admin",
+                                                        "role": "tester"
+                                                      },
+                                                      {
+                                                        "id": 2,
+                                                        "username": "tester",
+                                                        "role": "tester"
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+
+        server.stubFor(
+                get(urlPathEqualTo("/users"))
+                        .atPriority(20)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(401)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 401,
+                                                  "message": "未授权访问"
+                                                }
+                                                """)
+                        )
+        );
+
         server.stubFor(
                 get(urlEqualTo("/users/1"))
                         .atPriority(1)
