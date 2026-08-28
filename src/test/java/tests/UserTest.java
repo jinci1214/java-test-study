@@ -13,6 +13,8 @@ import model.response.UserResponse;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.util.function.Supplier;
+
 import static io.qameta.allure.SeverityLevel.CRITICAL;
 import static org.testng.Assert.*;
 
@@ -141,30 +143,21 @@ public class UserTest extends BaseTest {
             String token,
             String scenario
     ) {
-        String originalToken = TokenUtil.getToken();
-
-        try {
-            if (token == null) {
-                TokenUtil.clear();
-            } else {
-                TokenUtil.setToken(token);
-            }
-
-            Response response = UserApi.updateUser(
+        Response response = requestWithToken(
+                token,
+                () -> UserApi.updateUser(
                     1,
                     new CreateUserRequest("updated-admin", "tester")
-            );
+                )
+        );
 
-            ApiAssertions.assertErrorResponse(
-                    response,
-                    401,
-                    401,
-                    "未授权访问",
-                    scenario
-            );
-        } finally {
-            TokenUtil.setToken(originalToken);
-        }
+        ApiAssertions.assertErrorResponse(
+                response,
+                401,
+                401,
+                "未授权访问",
+                scenario
+        );
     }
 
     @Test(groups = "regression")
@@ -208,27 +201,15 @@ public class UserTest extends BaseTest {
             String token,
             String scenario
     ) {
-        String originalToken = TokenUtil.getToken();
+        Response response = requestWithToken(token, () -> UserApi.deleteUser(1));
 
-        try {
-            if (token == null) {
-                TokenUtil.clear();
-            } else {
-                TokenUtil.setToken(token);
-            }
-
-            Response response = UserApi.deleteUser(1);
-
-            ApiAssertions.assertErrorResponse(
-                    response,
-                    401,
-                    401,
-                    "未授权访问",
-                    scenario
-            );
-        } finally {
-            TokenUtil.setToken(originalToken);
-        }
+        ApiAssertions.assertErrorResponse(
+                response,
+                401,
+                401,
+                "未授权访问",
+                scenario
+        );
     }
 
     @Test(groups = "regression")
@@ -329,29 +310,20 @@ public class UserTest extends BaseTest {
             String token,
             String scenario
     ) {
-        String originalToken = TokenUtil.getToken();
+        Response response = requestWithToken(
+                token,
+                () -> UserApi.createUser(
+                        new CreateUserRequest("new-user", "tester")
+                )
+        );
 
-        try {
-            if (token == null) {
-                TokenUtil.clear();
-            } else {
-                TokenUtil.setToken(token);
-            }
-
-            Response response = UserApi.createUser(
-                    new CreateUserRequest("new-user", "tester")
-            );
-
-            ApiAssertions.assertErrorResponse(
-                    response,
-                    401,
-                    401,
-                    "未授权访问",
-                    scenario
-            );
-        } finally {
-            TokenUtil.setToken(originalToken);
-        }
+        ApiAssertions.assertErrorResponse(
+                response,
+                401,
+                401,
+                "未授权访问",
+                scenario
+        );
     }
 
     @Test(groups = {
@@ -589,27 +561,18 @@ public class UserTest extends BaseTest {
             String token,
             String scenario
     ) {
-        String originalToken = TokenUtil.getToken();
+        Response response = requestWithToken(
+                token,
+                () -> UserApi.getUsers(1, 2)
+        );
 
-        try {
-            if (token == null) {
-                TokenUtil.clear();
-            } else {
-                TokenUtil.setToken(token);
-            }
-
-            Response response = UserApi.getUsers(1, 2);
-
-            ApiAssertions.assertErrorResponse(
-                    response,
-                    401,
-                    401,
-                    "未授权访问",
-                    scenario
-            );
-        } finally {
-            TokenUtil.setToken(originalToken);
-        }
+        ApiAssertions.assertErrorResponse(
+                response,
+                401,
+                401,
+                "未授权访问",
+                scenario
+        );
     }
 
     @DataProvider(name = "invalidTokenData")
@@ -634,33 +597,37 @@ public class UserTest extends BaseTest {
             String token,
             String scenario
     ) {
+        Response response = requestWithToken(token, UserApi::getUser);
 
-        // 保存原来的Token，防止影响其他测试
+        ApiAssertions.assertErrorResponse(
+                response,
+                401,
+                401,
+                "未授权访问",
+                scenario
+        );
+    }
+
+    private Response requestWithToken(
+            String token,
+            Supplier<Response> requestSender
+    ) {
         String originalToken = TokenUtil.getToken();
 
         try {
-
-            if(token == null){
+            if (token == null) {
                 TokenUtil.clear();
-            }else{
+            } else {
                 TokenUtil.setToken(token);
             }
 
-
-            Response response = UserApi.getUser();
-
-
-            ApiAssertions.assertErrorResponse(
-                    response,
-                    401,
-                    401,
-                    "未授权访问",
-                    scenario
-            );
-
+            return requestSender.get();
         } finally {
-            // 无论测试成功还是失败，都恢复Token
-            TokenUtil.setToken(originalToken);
+            if (originalToken == null) {
+                TokenUtil.clear();
+            } else {
+                TokenUtil.setToken(originalToken);
+            }
         }
     }
 
