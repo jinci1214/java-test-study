@@ -4,6 +4,7 @@ package api;
 import common.RequestUtil;
 import config.Config;
 import io.restassured.response.Response;
+import model.request.CreateUserRequest;
 
 public class UserApi {
 
@@ -11,9 +12,45 @@ public class UserApi {
     private UserApi(){}
 
     public static Response getUser(){
+        return getUserById(1);
+    }
+
+    public static Response getUserById(long userId) {
+        validateUserId(userId);
+
         return RequestUtil.get(
                 Config.getBaseUrl(),
-                "/users/1",
+                "/users/" + userId,
+                true
+        );
+    }
+
+    public static Response createUser(CreateUserRequest request) {
+        return RequestUtil.post(
+                Config.getBaseUrl(),
+                "/users",
+                request,
+                true
+        );
+    }
+
+    public static Response updateUser(long userId, CreateUserRequest request) {
+        validateUserId(userId);
+
+        return RequestUtil.put(
+                Config.getBaseUrl(),
+                "/users/" + userId,
+                request,
+                true
+        );
+    }
+
+    public static Response deleteUser(long userId) {
+        validateUserId(userId);
+
+        return RequestUtil.delete(
+                Config.getBaseUrl(),
+                "/users/" + userId,
                 true
         );
     }
@@ -88,6 +125,12 @@ public class UserApi {
 
         if (pageSize <= 0) {
             throw new IllegalArgumentException("每页数量必须大于0");
+        }
+    }
+
+    private static void validateUserId(long userId) {
+        if (userId <= 0) {
+            throw new IllegalArgumentException("用户ID必须大于0");
         }
     }
 

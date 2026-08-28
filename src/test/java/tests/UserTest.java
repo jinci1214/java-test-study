@@ -7,6 +7,7 @@ import base.BaseTest;
 import common.TokenUtil;
 import io.qameta.allure.*;
 import io.restassured.response.Response;
+import model.request.CreateUserRequest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -62,6 +63,287 @@ public class UserTest extends BaseTest {
         );
 
 
+    }
+
+    @Test(groups = "regression")
+    @Story("查询用户信息")
+    @Severity(CRITICAL)
+    @Description("查询不存在的用户，验证服务端返回未找到错误")
+    public void getNonexistentUserTest() {
+        Response response = UserApi.getUserById(999);
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                404,
+                404,
+                "用户不存在",
+                "查询不存在的用户"
+        );
+    }
+
+    @Test(groups = "regression")
+    @Story("更新用户")
+    @Severity(CRITICAL)
+    @Description("携带正确Token更新用户，验证响应中的更新后数据")
+    public void updateUserTest() {
+        Response response = UserApi.updateUser(
+                1,
+                new CreateUserRequest("updated-admin", "tester")
+        );
+
+        assertEquals(response.statusCode(), 200);
+        assertEquals(response.jsonPath().getInt("code"), 0);
+        assertEquals(response.jsonPath().getString("message"), "更新成功");
+        assertEquals(response.jsonPath().getInt("data.id"), 1);
+        assertEquals(
+                response.jsonPath().getString("data.username"),
+                "updated-admin"
+        );
+        assertEquals(response.jsonPath().getString("data.role"), "tester");
+    }
+
+    @Test(groups = "regression")
+    @Story("更新用户")
+    @Severity(CRITICAL)
+    @Description("更新不存在的用户，验证服务端返回未找到错误")
+    public void updateNonexistentUserTest() {
+        Response response = UserApi.updateUser(
+                999,
+                new CreateUserRequest("updated-user", "tester")
+        );
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                404,
+                404,
+                "用户不存在",
+                "更新不存在的用户"
+        );
+    }
+
+    @Test(
+            dataProvider = "invalidTokenData",
+            groups = {
+                    "regression",
+                    "auth"
+            }
+    )
+    @Story("更新用户接口鉴权")
+    @Severity(CRITICAL)
+    @Description("验证缺少Token或Token错误时，更新用户接口拒绝访问")
+    public void updateUserUnauthorizedTest(
+            String token,
+            String scenario
+    ) {
+        String originalToken = TokenUtil.getToken();
+
+        try {
+            if (token == null) {
+                TokenUtil.clear();
+            } else {
+                TokenUtil.setToken(token);
+            }
+
+            Response response = UserApi.updateUser(
+                    1,
+                    new CreateUserRequest("updated-admin", "tester")
+            );
+
+            ApiAssertions.assertErrorResponse(
+                    response,
+                    401,
+                    401,
+                    "未授权访问",
+                    scenario
+            );
+        } finally {
+            TokenUtil.setToken(originalToken);
+        }
+    }
+
+    @Test(groups = "regression")
+    @Story("删除用户")
+    @Severity(CRITICAL)
+    @Description("携带正确Token删除用户，验证服务端返回无内容成功状态")
+    public void deleteUserTest() {
+        Response response = UserApi.deleteUser(1);
+
+        assertEquals(response.statusCode(), 204);
+        assertTrue(response.getBody().asString().isEmpty());
+    }
+
+    @Test(groups = "regression")
+    @Story("删除用户")
+    @Severity(CRITICAL)
+    @Description("删除不存在的用户，验证服务端返回未找到错误")
+    public void deleteNonexistentUserTest() {
+        Response response = UserApi.deleteUser(999);
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                404,
+                404,
+                "用户不存在",
+                "删除不存在的用户"
+        );
+    }
+
+    @Test(
+            dataProvider = "invalidTokenData",
+            groups = {
+                    "regression",
+                    "auth"
+            }
+    )
+    @Story("删除用户接口鉴权")
+    @Severity(CRITICAL)
+    @Description("验证缺少Token或Token错误时，删除用户接口拒绝访问")
+    public void deleteUserUnauthorizedTest(
+            String token,
+            String scenario
+    ) {
+        String originalToken = TokenUtil.getToken();
+
+        try {
+            if (token == null) {
+                TokenUtil.clear();
+            } else {
+                TokenUtil.setToken(token);
+            }
+
+            Response response = UserApi.deleteUser(1);
+
+            ApiAssertions.assertErrorResponse(
+                    response,
+                    401,
+                    401,
+                    "未授权访问",
+                    scenario
+            );
+        } finally {
+            TokenUtil.setToken(originalToken);
+        }
+    }
+
+    @Test(groups = "regression")
+    @Story("创建用户")
+    @Severity(CRITICAL)
+    @Description("携带正确Token创建用户，验证响应中的新用户数据")
+    public void createUserTest() {
+        CreateUserRequest request = new CreateUserRequest("new-user", "tester");
+
+        Response response = UserApi.createUser(request);
+
+        assertEquals(response.statusCode(), 201);
+        assertEquals(response.jsonPath().getInt("code"), 0);
+        assertEquals(response.jsonPath().getString("message"), "创建成功");
+        assertEquals(response.jsonPath().getInt("data.id"), 4);
+        assertEquals(response.jsonPath().getString("data.username"), "new-user");
+        assertEquals(response.jsonPath().getString("data.role"), "tester");
+    }
+
+    @Test(dataProvider = "blankUsernameData", groups = "regression")
+    @Story("创建用户")
+    @Severity(CRITICAL)
+    @Description("用户名为空时，验证服务端拒绝创建用户")
+    public void createUserWithBlankUsernameTest(
+            String username,
+            String scenario
+    ) {
+        CreateUserRequest request = new CreateUserRequest(username, "tester");
+
+        Response response = UserApi.createUser(request);
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                400,
+                400,
+                "用户名不能为空",
+                scenario
+        );
+    }
+
+    @Test(groups = "regression")
+    @Story("创建用户")
+    @Severity(CRITICAL)
+    @Description("创建已存在用户名时，验证服务端返回冲突错误")
+    public void createUserWithDuplicateUsernameTest() {
+        Response response = UserApi.createUser(
+                new CreateUserRequest("admin", "tester")
+        );
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                409,
+                409,
+                "用户名已存在",
+                "用户名重复"
+        );
+    }
+
+    @Test(groups = "regression")
+    @Story("创建用户")
+    @Severity(CRITICAL)
+    @Description("传入不支持的用户角色时，验证服务端拒绝创建用户")
+    public void createUserWithUnsupportedRoleTest() {
+        Response response = UserApi.createUser(
+                new CreateUserRequest("new-user", "manager")
+        );
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                400,
+                400,
+                "不支持的用户角色",
+                "不支持的用户角色"
+        );
+    }
+
+    @DataProvider(name = "blankUsernameData")
+    public Object[][] blankUsernameData() {
+        return new Object[][]{
+                {"", "用户名为空字符串"},
+                {"   ", "用户名只有空格"}
+        };
+    }
+
+    @Test(
+            dataProvider = "invalidTokenData",
+            groups = {
+                    "regression",
+                    "auth"
+            }
+    )
+    @Story("创建用户接口鉴权")
+    @Severity(CRITICAL)
+    @Description("验证缺少Token或Token错误时，创建用户接口拒绝访问")
+    public void createUserUnauthorizedTest(
+            String token,
+            String scenario
+    ) {
+        String originalToken = TokenUtil.getToken();
+
+        try {
+            if (token == null) {
+                TokenUtil.clear();
+            } else {
+                TokenUtil.setToken(token);
+            }
+
+            Response response = UserApi.createUser(
+                    new CreateUserRequest("new-user", "tester")
+            );
+
+            ApiAssertions.assertErrorResponse(
+                    response,
+                    401,
+                    401,
+                    "未授权访问",
+                    scenario
+            );
+        } finally {
+            TokenUtil.setToken(originalToken);
+        }
     }
 
     @Test(groups = {

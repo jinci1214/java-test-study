@@ -153,6 +153,140 @@ public final class LoginMockServer {
 
 
         server.stubFor(
+                post(urlEqualTo("/users"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withRequestBody(
+                                matchingJsonPath("$.username", equalTo("new-user"))
+                        )
+                        .withRequestBody(
+                                matchingJsonPath("$.role", equalTo("tester"))
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(201)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "创建成功",
+                                                  "data": {
+                                                    "id": 4,
+                                                    "username": "new-user",
+                                                    "role": "tester"
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                post(urlEqualTo("/users"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withRequestBody(
+                                matchingJsonPath("$.username", matching("^\\s*$"))
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(400)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 400,
+                                                  "message": "用户名不能为空"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                post(urlEqualTo("/users"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withRequestBody(
+                                matchingJsonPath("$.username", equalTo("admin"))
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(409)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 409,
+                                                  "message": "用户名已存在"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                post(urlEqualTo("/users"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withRequestBody(
+                                matchingJsonPath(
+                                        "$.role",
+                                        matching("^(?!(?:tester|developer)$).+$")
+                                )
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(400)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 400,
+                                                  "message": "不支持的用户角色"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                post(urlEqualTo("/users"))
+                        .atPriority(20)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(401)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 401,
+                                                  "message": "未授权访问"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
                 get(urlPathEqualTo("/users"))
                         .atPriority(1)
                         .withHeader(
@@ -557,6 +691,160 @@ public final class LoginMockServer {
                                                 {
                                                   "code": 401,
                                                   "message": "未授权访问"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                delete(urlEqualTo("/users/1"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .willReturn(aResponse().withStatus(204))
+        );
+
+        server.stubFor(
+                delete(urlEqualTo("/users/999"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(404)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 404,
+                                                  "message": "用户不存在"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                delete(urlPathMatching("/users/\\d+"))
+                        .atPriority(20)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(401)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 401,
+                                                  "message": "未授权访问"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                put(urlEqualTo("/users/1"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withRequestBody(
+                                matchingJsonPath(
+                                        "$.username",
+                                        equalTo("updated-admin")
+                                )
+                        )
+                        .withRequestBody(
+                                matchingJsonPath("$.role", equalTo("tester"))
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "更新成功",
+                                                  "data": {
+                                                    "id": 1,
+                                                    "username": "updated-admin",
+                                                    "role": "tester"
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                put(urlEqualTo("/users/999"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(404)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 404,
+                                                  "message": "用户不存在"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                put(urlPathMatching("/users/\\d+"))
+                        .atPriority(20)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(401)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 401,
+                                                  "message": "未授权访问"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlEqualTo("/users/999"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(404)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 404,
+                                                  "message": "用户不存在"
                                                 }
                                                 """)
                         )

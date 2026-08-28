@@ -131,4 +131,76 @@ public class RequestUtil {
         return response;
     }
 
+    public static Response put(
+            String baseUrl,
+            String path,
+            Object body,
+            boolean needAuth
+    ) {
+        boolean hasAuthorization =
+                needAuth && TokenUtil.hasToken();
+
+        AllureAttachmentUtil.attachRequest(
+                "PUT",
+                baseUrl + path,
+                hasAuthorization,
+                body
+        );
+
+        log.info(
+                "发送HTTP请求：method=PUT,url={}{}",
+                baseUrl,
+                path
+        );
+        Response response =
+                createRequest(baseUrl, needAuth)
+                        .body(body)
+                        .when()
+                        .put(path);
+
+        AllureAttachmentUtil.attachResponse("PUT", response);
+
+        log.info(
+                "收到HTTP响应，method=PUT,path={},status={}",
+                path,
+                response.statusCode()
+        );
+        return response;
+    }
+
+    public static Response delete(
+            String baseUrl,
+            String path,
+            boolean needAuth
+    ) {
+        boolean hasAuthorization =
+                needAuth && TokenUtil.hasToken();
+
+        AllureAttachmentUtil.attachRequest(
+                "DELETE",
+                baseUrl + path,
+                hasAuthorization,
+                null
+        );
+
+        log.info(
+                "发送HTTP请求：method=DELETE,url={}{}",
+                baseUrl,
+                path
+        );
+        Response response =
+                createRequest(baseUrl, needAuth)
+                        .when()
+                        .delete(path);
+
+        AllureAttachmentUtil.attachResponse("DELETE", response);
+
+        log.info(
+                "收到HTTP响应，method=DELETE,path={},status={}",
+                path,
+                response.statusCode()
+        );
+        return response;
+    }
+
 }

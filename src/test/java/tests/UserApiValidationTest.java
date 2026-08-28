@@ -19,6 +19,16 @@ public class UserApiValidationTest {
     }
 
     @Test(groups = "regression")
+    public void shouldRejectNonPositiveUserId() {
+        IllegalArgumentException exception = expectThrows(
+                IllegalArgumentException.class,
+                () -> UserApi.getUserById(0)
+        );
+
+        assertEquals(exception.getMessage(), "用户ID必须大于0");
+    }
+
+    @Test(groups = "regression")
     public void shouldRejectNonPositivePageSize() {
         IllegalArgumentException exception = expectThrows(
                 IllegalArgumentException.class,
