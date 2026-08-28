@@ -8,6 +8,8 @@ import common.TokenUtil;
 import io.qameta.allure.*;
 import io.restassured.response.Response;
 import model.request.CreateUserRequest;
+import model.response.UserListResponse;
+import model.response.UserResponse;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -45,20 +47,22 @@ public class UserTest extends BaseTest {
                 200
         );
 
+        UserResponse userResponse = response.as(UserResponse.class);
+
         assertEquals(
-                response.jsonPath().getInt("code"),
+                userResponse.getCode(),
                 0
         );
         assertEquals(
-                response.jsonPath().getInt("data.id"),
+                userResponse.getData().getId(),
                 1
         );
         assertEquals(
-                response.jsonPath().getString("data.username"),
+                userResponse.getData().getUsername(),
                 "admin"
         );
         assertEquals(
-                response.jsonPath().getString("data.role"),
+                userResponse.getData().getRole(),
                 "tester"
         );
 
@@ -92,14 +96,16 @@ public class UserTest extends BaseTest {
         );
 
         assertEquals(response.statusCode(), 200);
-        assertEquals(response.jsonPath().getInt("code"), 0);
-        assertEquals(response.jsonPath().getString("message"), "更新成功");
-        assertEquals(response.jsonPath().getInt("data.id"), 1);
+        UserResponse userResponse = response.as(UserResponse.class);
+
+        assertEquals(userResponse.getCode(), 0);
+        assertEquals(userResponse.getMessage(), "更新成功");
+        assertEquals(userResponse.getData().getId(), 1);
         assertEquals(
-                response.jsonPath().getString("data.username"),
+                userResponse.getData().getUsername(),
                 "updated-admin"
         );
-        assertEquals(response.jsonPath().getString("data.role"), "tester");
+        assertEquals(userResponse.getData().getRole(), "tester");
     }
 
     @Test(groups = "regression")
@@ -235,11 +241,13 @@ public class UserTest extends BaseTest {
         Response response = UserApi.createUser(request);
 
         assertEquals(response.statusCode(), 201);
-        assertEquals(response.jsonPath().getInt("code"), 0);
-        assertEquals(response.jsonPath().getString("message"), "创建成功");
-        assertEquals(response.jsonPath().getInt("data.id"), 4);
-        assertEquals(response.jsonPath().getString("data.username"), "new-user");
-        assertEquals(response.jsonPath().getString("data.role"), "tester");
+        UserResponse userResponse = response.as(UserResponse.class);
+
+        assertEquals(userResponse.getCode(), 0);
+        assertEquals(userResponse.getMessage(), "创建成功");
+        assertEquals(userResponse.getData().getId(), 4);
+        assertEquals(userResponse.getData().getUsername(), "new-user");
+        assertEquals(userResponse.getData().getRole(), "tester");
     }
 
     @Test(dataProvider = "blankUsernameData", groups = "regression")
@@ -357,14 +365,16 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsers(1, 2);
 
         assertEquals(response.statusCode(), 200);
-        assertEquals(response.jsonPath().getInt("code"), 0);
-        assertEquals(response.jsonPath().getInt("data.page"), 1);
-        assertEquals(response.jsonPath().getInt("data.pageSize"), 2);
-        assertEquals(response.jsonPath().getInt("data.total"), 3);
-        assertEquals(response.jsonPath().getList("data.items").size(), 2);
-        assertEquals(response.jsonPath().getInt("data.items[0].id"), 1);
+        UserListResponse userListResponse = response.as(UserListResponse.class);
+
+        assertEquals(userListResponse.getCode(), 0);
+        assertEquals(userListResponse.getData().getPage(), 1);
+        assertEquals(userListResponse.getData().getPageSize(), 2);
+        assertEquals(userListResponse.getData().getTotal(), 3);
+        assertEquals(userListResponse.getData().getItems().size(), 2);
+        assertEquals(userListResponse.getData().getItems().getFirst().getId(), 1);
         assertEquals(
-                response.jsonPath().getString("data.items[0].username"),
+                userListResponse.getData().getItems().getFirst().getUsername(),
                 "admin"
         );
     }
@@ -377,12 +387,14 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsers(1, 1);
 
         assertEquals(response.statusCode(), 200);
-        assertEquals(response.jsonPath().getInt("code"), 0);
-        assertEquals(response.jsonPath().getInt("data.page"), 1);
-        assertEquals(response.jsonPath().getInt("data.pageSize"), 1);
-        assertEquals(response.jsonPath().getInt("data.total"), 3);
-        assertEquals(response.jsonPath().getList("data.items").size(), 1);
-        assertEquals(response.jsonPath().getInt("data.items[0].id"), 1);
+        UserListResponse userListResponse = response.as(UserListResponse.class);
+
+        assertEquals(userListResponse.getCode(), 0);
+        assertEquals(userListResponse.getData().getPage(), 1);
+        assertEquals(userListResponse.getData().getPageSize(), 1);
+        assertEquals(userListResponse.getData().getTotal(), 3);
+        assertEquals(userListResponse.getData().getItems().size(), 1);
+        assertEquals(userListResponse.getData().getItems().getFirst().getId(), 1);
     }
 
     @Test(groups = "regression")
@@ -393,14 +405,16 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsers(2, 2);
 
         assertEquals(response.statusCode(), 200);
-        assertEquals(response.jsonPath().getInt("code"), 0);
-        assertEquals(response.jsonPath().getInt("data.page"), 2);
-        assertEquals(response.jsonPath().getInt("data.pageSize"), 2);
-        assertEquals(response.jsonPath().getInt("data.total"), 3);
-        assertEquals(response.jsonPath().getList("data.items").size(), 1);
-        assertEquals(response.jsonPath().getInt("data.items[0].id"), 3);
+        UserListResponse userListResponse = response.as(UserListResponse.class);
+
+        assertEquals(userListResponse.getCode(), 0);
+        assertEquals(userListResponse.getData().getPage(), 2);
+        assertEquals(userListResponse.getData().getPageSize(), 2);
+        assertEquals(userListResponse.getData().getTotal(), 3);
+        assertEquals(userListResponse.getData().getItems().size(), 1);
+        assertEquals(userListResponse.getData().getItems().getFirst().getId(), 3);
         assertEquals(
-                response.jsonPath().getString("data.items[0].role"),
+                userListResponse.getData().getItems().getFirst().getRole(),
                 "developer"
         );
     }
@@ -413,11 +427,13 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsers(3, 2);
 
         assertEquals(response.statusCode(), 200);
-        assertEquals(response.jsonPath().getInt("code"), 0);
-        assertEquals(response.jsonPath().getInt("data.page"), 3);
-        assertEquals(response.jsonPath().getInt("data.pageSize"), 2);
-        assertEquals(response.jsonPath().getInt("data.total"), 3);
-        assertEquals(response.jsonPath().getList("data.items").size(), 0);
+        UserListResponse userListResponse = response.as(UserListResponse.class);
+
+        assertEquals(userListResponse.getCode(), 0);
+        assertEquals(userListResponse.getData().getPage(), 3);
+        assertEquals(userListResponse.getData().getPageSize(), 2);
+        assertEquals(userListResponse.getData().getTotal(), 3);
+        assertTrue(userListResponse.getData().getItems().isEmpty());
     }
 
     @Test(groups = "regression")
@@ -428,14 +444,16 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsersByRole(1, 2, "tester");
 
         assertEquals(response.statusCode(), 200);
-        assertEquals(response.jsonPath().getInt("code"), 0);
-        assertEquals(response.jsonPath().getInt("data.page"), 1);
-        assertEquals(response.jsonPath().getInt("data.pageSize"), 2);
-        assertEquals(response.jsonPath().getInt("data.total"), 2);
-        assertEquals(response.jsonPath().getList("data.items").size(), 2);
-        assertEquals(
-                response.jsonPath().getList("data.items.role"),
-                java.util.List.of("tester", "tester")
+        UserListResponse userListResponse = response.as(UserListResponse.class);
+
+        assertEquals(userListResponse.getCode(), 0);
+        assertEquals(userListResponse.getData().getPage(), 1);
+        assertEquals(userListResponse.getData().getPageSize(), 2);
+        assertEquals(userListResponse.getData().getTotal(), 2);
+        assertEquals(userListResponse.getData().getItems().size(), 2);
+        assertTrue(
+                userListResponse.getData().getItems().stream()
+                        .allMatch(user -> "tester".equals(user.getRole()))
         );
     }
 
@@ -447,11 +465,19 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsersByRole(1, 2, "developer");
 
         assertEquals(response.statusCode(), 200);
-        assertEquals(response.jsonPath().getInt("code"), 0);
-        assertEquals(response.jsonPath().getInt("data.total"), 1);
-        assertEquals(response.jsonPath().getList("data.items").size(), 1);
-        assertEquals(response.jsonPath().getString("data.items[0].username"), "developer");
-        assertEquals(response.jsonPath().getString("data.items[0].role"), "developer");
+        UserListResponse userListResponse = response.as(UserListResponse.class);
+
+        assertEquals(userListResponse.getCode(), 0);
+        assertEquals(userListResponse.getData().getTotal(), 1);
+        assertEquals(userListResponse.getData().getItems().size(), 1);
+        assertEquals(
+                userListResponse.getData().getItems().getFirst().getUsername(),
+                "developer"
+        );
+        assertEquals(
+                userListResponse.getData().getItems().getFirst().getRole(),
+                "developer"
+        );
     }
 
     @Test(groups = "regression")
@@ -478,13 +504,19 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsersSortedByUsername(1, 2, "desc");
 
         assertEquals(response.statusCode(), 200);
-        assertEquals(response.jsonPath().getInt("code"), 0);
-        assertEquals(response.jsonPath().getInt("data.page"), 1);
-        assertEquals(response.jsonPath().getInt("data.pageSize"), 2);
-        assertEquals(response.jsonPath().getInt("data.total"), 3);
+        UserListResponse userListResponse = response.as(UserListResponse.class);
+
+        assertEquals(userListResponse.getCode(), 0);
+        assertEquals(userListResponse.getData().getPage(), 1);
+        assertEquals(userListResponse.getData().getPageSize(), 2);
+        assertEquals(userListResponse.getData().getTotal(), 3);
         assertEquals(
-                response.jsonPath().getList("data.items.username"),
-                java.util.List.of("tester", "admin")
+                userListResponse.getData().getItems().getFirst().getUsername(),
+                "tester"
+        );
+        assertEquals(
+                userListResponse.getData().getItems().get(1).getUsername(),
+                "admin"
         );
     }
 
@@ -496,13 +528,19 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsersSortedByUsername(1, 2, "asc");
 
         assertEquals(response.statusCode(), 200);
-        assertEquals(response.jsonPath().getInt("code"), 0);
-        assertEquals(response.jsonPath().getInt("data.page"), 1);
-        assertEquals(response.jsonPath().getInt("data.pageSize"), 2);
-        assertEquals(response.jsonPath().getInt("data.total"), 3);
+        UserListResponse userListResponse = response.as(UserListResponse.class);
+
+        assertEquals(userListResponse.getCode(), 0);
+        assertEquals(userListResponse.getData().getPage(), 1);
+        assertEquals(userListResponse.getData().getPageSize(), 2);
+        assertEquals(userListResponse.getData().getTotal(), 3);
         assertEquals(
-                response.jsonPath().getList("data.items.username"),
-                java.util.List.of("admin", "tester")
+                userListResponse.getData().getItems().getFirst().getUsername(),
+                "admin"
+        );
+        assertEquals(
+                userListResponse.getData().getItems().get(1).getUsername(),
+                "tester"
         );
     }
 
@@ -519,15 +557,21 @@ public class UserTest extends BaseTest {
         );
 
         assertEquals(response.statusCode(), 200);
-        assertEquals(response.jsonPath().getInt("code"), 0);
-        assertEquals(response.jsonPath().getInt("data.total"), 2);
-        assertEquals(
-                response.jsonPath().getList("data.items.role"),
-                java.util.List.of("tester", "tester")
+        UserListResponse userListResponse = response.as(UserListResponse.class);
+
+        assertEquals(userListResponse.getCode(), 0);
+        assertEquals(userListResponse.getData().getTotal(), 2);
+        assertTrue(
+                userListResponse.getData().getItems().stream()
+                        .allMatch(user -> "tester".equals(user.getRole()))
         );
         assertEquals(
-                response.jsonPath().getList("data.items.username"),
-                java.util.List.of("tester", "admin")
+                userListResponse.getData().getItems().getFirst().getUsername(),
+                "tester"
+        );
+        assertEquals(
+                userListResponse.getData().getItems().get(1).getUsername(),
+                "admin"
         );
     }
 
