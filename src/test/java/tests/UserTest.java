@@ -6,10 +6,12 @@ import base.BaseTest;
 
 import common.TokenUtil;
 import io.qameta.allure.*;
+import io.restassured.common.mapper.TypeRef;
 import io.restassured.response.Response;
 import model.request.CreateUserRequest;
-import model.response.UserListResponse;
-import model.response.UserResponse;
+import model.response.ApiResponse;
+import model.response.UserData;
+import model.response.UserPageData;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -49,7 +51,10 @@ public class UserTest extends BaseTest {
                 200
         );
 
-        UserResponse userResponse = response.as(UserResponse.class);
+        ApiResponse<UserData> userResponse = response.as(
+                new TypeRef<ApiResponse<UserData>>() {
+                }
+        );
 
         assertEquals(
                 userResponse.getCode(),
@@ -98,7 +103,10 @@ public class UserTest extends BaseTest {
         );
 
         assertEquals(response.statusCode(), 200);
-        UserResponse userResponse = response.as(UserResponse.class);
+        ApiResponse<UserData> userResponse = response.as(
+                new TypeRef<ApiResponse<UserData>>() {
+                }
+        );
 
         assertEquals(userResponse.getCode(), 0);
         assertEquals(userResponse.getMessage(), "更新成功");
@@ -222,7 +230,10 @@ public class UserTest extends BaseTest {
         Response response = UserApi.createUser(request);
 
         assertEquals(response.statusCode(), 201);
-        UserResponse userResponse = response.as(UserResponse.class);
+        ApiResponse<UserData> userResponse = response.as(
+                new TypeRef<ApiResponse<UserData>>() {
+                }
+        );
 
         assertEquals(userResponse.getCode(), 0);
         assertEquals(userResponse.getMessage(), "创建成功");
@@ -337,7 +348,10 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsers(1, 2);
 
         assertEquals(response.statusCode(), 200);
-        UserListResponse userListResponse = response.as(UserListResponse.class);
+        ApiResponse<UserPageData> userListResponse = response.as(
+                new TypeRef<ApiResponse<UserPageData>>() {
+                }
+        );
 
         assertEquals(userListResponse.getCode(), 0);
         assertEquals(userListResponse.getData().getPage(), 1);
@@ -359,7 +373,10 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsers(1, 1);
 
         assertEquals(response.statusCode(), 200);
-        UserListResponse userListResponse = response.as(UserListResponse.class);
+        ApiResponse<UserPageData> userListResponse = response.as(
+                new TypeRef<ApiResponse<UserPageData>>() {
+                }
+        );
 
         assertEquals(userListResponse.getCode(), 0);
         assertEquals(userListResponse.getData().getPage(), 1);
@@ -377,7 +394,10 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsers(2, 2);
 
         assertEquals(response.statusCode(), 200);
-        UserListResponse userListResponse = response.as(UserListResponse.class);
+        ApiResponse<UserPageData> userListResponse = response.as(
+                new TypeRef<ApiResponse<UserPageData>>() {
+                }
+        );
 
         assertEquals(userListResponse.getCode(), 0);
         assertEquals(userListResponse.getData().getPage(), 2);
@@ -399,7 +419,10 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsers(3, 2);
 
         assertEquals(response.statusCode(), 200);
-        UserListResponse userListResponse = response.as(UserListResponse.class);
+        ApiResponse<UserPageData> userListResponse = response.as(
+                new TypeRef<ApiResponse<UserPageData>>() {
+                }
+        );
 
         assertEquals(userListResponse.getCode(), 0);
         assertEquals(userListResponse.getData().getPage(), 3);
@@ -416,7 +439,10 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsersByRole(1, 2, "tester");
 
         assertEquals(response.statusCode(), 200);
-        UserListResponse userListResponse = response.as(UserListResponse.class);
+        ApiResponse<UserPageData> userListResponse = response.as(
+                new TypeRef<ApiResponse<UserPageData>>() {
+                }
+        );
 
         assertEquals(userListResponse.getCode(), 0);
         assertEquals(userListResponse.getData().getPage(), 1);
@@ -437,7 +463,10 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsersByRole(1, 2, "developer");
 
         assertEquals(response.statusCode(), 200);
-        UserListResponse userListResponse = response.as(UserListResponse.class);
+        ApiResponse<UserPageData> userListResponse = response.as(
+                new TypeRef<ApiResponse<UserPageData>>() {
+                }
+        );
 
         assertEquals(userListResponse.getCode(), 0);
         assertEquals(userListResponse.getData().getTotal(), 1);
@@ -476,7 +505,10 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsersSortedByUsername(1, 2, "desc");
 
         assertEquals(response.statusCode(), 200);
-        UserListResponse userListResponse = response.as(UserListResponse.class);
+        ApiResponse<UserPageData> userListResponse = response.as(
+                new TypeRef<ApiResponse<UserPageData>>() {
+                }
+        );
 
         assertEquals(userListResponse.getCode(), 0);
         assertEquals(userListResponse.getData().getPage(), 1);
@@ -500,7 +532,10 @@ public class UserTest extends BaseTest {
         Response response = UserApi.getUsersSortedByUsername(1, 2, "asc");
 
         assertEquals(response.statusCode(), 200);
-        UserListResponse userListResponse = response.as(UserListResponse.class);
+        ApiResponse<UserPageData> userListResponse = response.as(
+                new TypeRef<ApiResponse<UserPageData>>() {
+                }
+        );
 
         assertEquals(userListResponse.getCode(), 0);
         assertEquals(userListResponse.getData().getPage(), 1);
@@ -529,7 +564,10 @@ public class UserTest extends BaseTest {
         );
 
         assertEquals(response.statusCode(), 200);
-        UserListResponse userListResponse = response.as(UserListResponse.class);
+        ApiResponse<UserPageData> userListResponse = response.as(
+                new TypeRef<ApiResponse<UserPageData>>() {
+                }
+        );
 
         assertEquals(userListResponse.getCode(), 0);
         assertEquals(userListResponse.getData().getTotal(), 2);

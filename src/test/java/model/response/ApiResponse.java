@@ -1,12 +1,12 @@
 package model.response;
 
-public class UserResponse {
+public class ApiResponse<T> {
 
     private int code;
     private String message;
-    private UserData data;
+    private T data;
 
-    public UserResponse() {
+    public ApiResponse() {
     }
 
     public int getCode() {
@@ -25,11 +25,11 @@ public class UserResponse {
         this.message = message;
     }
 
-    public UserData getData() {
+    public T getData() {
         return data;
     }
 
-    public void setData(UserData data) {
+    public void setData(T data) {
         this.data = data;
     }
 }
