@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import report.AllureAttachmentUtil;
 
+import java.io.File;
+
 import static io.restassured.RestAssured.*;
 
 
@@ -122,6 +124,45 @@ public class RequestUtil {
                 "POST",
                 response
         );
+
+        log.info(
+                "收到HTTP响应，method=POST,path={},status={}",
+                path,
+                response.statusCode()
+        );
+        return response;
+    }
+
+    public static Response postMultipart(
+            String baseUrl,
+            String path,
+            String fieldName,
+            File file,
+            String contentType,
+            boolean needAuth
+    ) {
+        boolean hasAuthorization =
+                needAuth && TokenUtil.hasToken();
+
+        AllureAttachmentUtil.attachRequest(
+                "POST",
+                baseUrl + path,
+                hasAuthorization,
+                "上传文件：" + file.getName()
+        );
+
+        log.info(
+                "发送HTTP请求：method=POST,url={},file={}",
+                baseUrl + path,
+                file.getName()
+        );
+        Response response = createRequest(baseUrl, needAuth)
+                .contentType("multipart/form-data")
+                .multiPart(fieldName, file, contentType)
+                .when()
+                .post(path);
+
+        AllureAttachmentUtil.attachResponse("POST", response);
 
         log.info(
                 "收到HTTP响应，method=POST,path={},status={}",

@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "required": [
+    "code",
+    "message",
+    "data"
+  ],
+  "properties": {
+    "code": {
+      "type": "integer"
+    },
+    "message": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "fileId",
+        "fileName",
+        "contentType"
+      ],
+      "properties": {
+        "fileId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fileName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contentType": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

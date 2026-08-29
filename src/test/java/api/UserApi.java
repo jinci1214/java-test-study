@@ -6,6 +6,8 @@ import config.Config;
 import io.restassured.response.Response;
 import model.request.CreateUserRequest;
 
+import java.io.File;
+
 public class UserApi {
 
 
@@ -51,6 +53,29 @@ public class UserApi {
         return RequestUtil.delete(
                 Config.getBaseUrl(),
                 "/users/" + userId,
+                true
+        );
+    }
+
+    public static Response uploadUserFile(File file) {
+        return uploadUserFile(file, "text/plain");
+    }
+
+    public static Response uploadUserFile(File file, String contentType) {
+        return RequestUtil.postMultipart(
+                Config.getBaseUrl(),
+                "/files",
+                "file",
+                file,
+                contentType,
+                true
+        );
+    }
+
+    public static Response downloadUserFile(String fileId) {
+        return RequestUtil.get(
+                Config.getBaseUrl(),
+                "/files/" + fileId + "/download",
                 true
         );
     }

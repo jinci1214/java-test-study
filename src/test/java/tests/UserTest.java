@@ -11,12 +11,16 @@ import io.restassured.response.Response;
 import mock.LoginMockServer;
 import model.request.CreateUserRequest;
 import model.response.ApiResponse;
+import model.response.FileUploadData;
 import model.response.UserData;
 import model.response.UserPageData;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.function.Supplier;
 
 import static io.qameta.allure.SeverityLevel.CRITICAL;
@@ -778,6 +782,158 @@ public class UserTest extends BaseTest {
                 404,
                 "用户不存在",
                 "删除后查询用户"
+        );
+    }
+
+    @Test(groups = "regression")
+    @Story("上传用户文件")
+    @Severity(CRITICAL)
+    @Description("携带正确Token上传文本文件，验证服务端收到 multipart 文件内容")
+    public void uploadUserFileTest() throws Exception {
+        File file = getUploadSampleFile();
+
+        Response response = UserApi.uploadUserFile(file);
+
+        assertEquals(response.statusCode(), 201);
+        ApiResponse<FileUploadData> uploadResponse = response.as(
+                new TypeRef<ApiResponse<FileUploadData>>() {
+                }
+        );
+
+        assertEquals(uploadResponse.getCode(), 0);
+        assertEquals(uploadResponse.getMessage(), "上传成功");
+        assertEquals(
+                uploadResponse.getData().getFileName(),
+                "upload-sample.txt"
+        );
+        assertEquals(
+                uploadResponse.getData().getContentType(),
+                "text/plain"
+        );
+        ApiAssertions.assertResponseMatchesSchema(
+                response,
+                "schemas/file-upload-success-schema.json"
+        );
+    }
+
+    @Test(
+            dataProvider = "invalidTokenData",
+            groups = {"regression", "auth"}
+    )
+    @Story("上传用户文件鉴权")
+    @Severity(CRITICAL)
+    @Description("验证缺少Token或Token错误时，文件上传接口拒绝访问")
+    public void uploadUserFileUnauthorizedTest(
+            String token,
+            String scenario
+    ) throws Exception {
+        File file = getUploadSampleFile();
+        Response response = requestWithToken(
+                token,
+                () -> UserApi.uploadUserFile(file)
+        );
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                401,
+                401,
+                "未授权访问",
+                scenario
+        );
+    }
+
+    @Test(groups = "regression")
+    @Story("上传用户文件")
+    @Severity(CRITICAL)
+    @Description("上传不支持的文件类型时，验证服务端返回媒体类型错误")
+    public void uploadUserFileWithUnsupportedContentTypeTest() throws Exception {
+        Response response = UserApi.uploadUserFile(
+                getUploadSampleFile(),
+                "application/json"
+        );
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                415,
+                415,
+                "不支持的文件类型",
+                "上传不支持的文件类型"
+        );
+    }
+
+    @Test(groups = "regression")
+    @Story("下载用户文件")
+    @Severity(CRITICAL)
+    @Description("携带正确Token下载文件，验证文件类型、文件名和文件内容")
+    public void downloadUserFileTest() throws Exception {
+        Response response = UserApi.downloadUserFile("file-100");
+
+        assertEquals(response.statusCode(), 200);
+        assertEquals(response.getContentType(), "text/plain");
+        assertEquals(
+                response.getHeader("Content-Disposition"),
+                "attachment; filename=upload-sample.txt"
+        );
+
+        Path downloadedFile = Files.createTempFile("downloaded-user-file-", ".txt");
+        try {
+            Files.write(downloadedFile, response.asByteArray());
+            assertEquals(
+                    Files.readString(downloadedFile),
+                    "这是接口自动化上传测试文件。"
+            );
+        } finally {
+            Files.deleteIfExists(downloadedFile);
+        }
+    }
+
+    @Test(groups = "regression")
+    @Story("下载用户文件")
+    @Severity(CRITICAL)
+    @Description("下载不存在的文件，验证服务端返回未找到错误")
+    public void downloadNonexistentUserFileTest() {
+        Response response = UserApi.downloadUserFile("missing-file");
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                404,
+                404,
+                "文件不存在",
+                "下载不存在的文件"
+        );
+    }
+
+    @Test(
+            dataProvider = "invalidTokenData",
+            groups = {"regression", "auth"}
+    )
+    @Story("下载用户文件鉴权")
+    @Severity(CRITICAL)
+    @Description("验证缺少Token或Token错误时，文件下载接口拒绝访问")
+    public void downloadUserFileUnauthorizedTest(
+            String token,
+            String scenario
+    ) {
+        Response response = requestWithToken(
+                token,
+                () -> UserApi.downloadUserFile("file-100")
+        );
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                401,
+                401,
+                "未授权访问",
+                scenario
+        );
+    }
+
+    private File getUploadSampleFile() throws Exception {
+        return new File(
+                getClass()
+                        .getClassLoader()
+                        .getResource("files/upload-sample.txt")
+                        .toURI()
         );
     }
 
