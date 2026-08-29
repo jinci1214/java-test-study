@@ -8,11 +8,13 @@ import common.TokenUtil;
 import io.qameta.allure.*;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.response.Response;
+import mock.LoginMockServer;
 import model.request.CreateUserRequest;
 import model.response.ApiResponse;
 import model.response.UserData;
 import model.response.UserPageData;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.function.Supplier;
@@ -25,6 +27,10 @@ import static org.testng.Assert.*;
 @Feature("用户管理")
 public class UserTest extends BaseTest {
 
+    @BeforeMethod
+    public void resetMockScenarios() {
+        LoginMockServer.resetScenarios();
+    }
 
 
 
@@ -73,6 +79,11 @@ public class UserTest extends BaseTest {
                 "tester"
         );
 
+        ApiAssertions.assertResponseMatchesSchema(
+                response,
+                "schemas/user-success-schema.json"
+        );
+
 
     }
 
@@ -116,6 +127,11 @@ public class UserTest extends BaseTest {
                 "updated-admin"
         );
         assertEquals(userResponse.getData().getRole(), "tester");
+
+        ApiAssertions.assertResponseMatchesSchema(
+                response,
+                "schemas/user-success-schema.json"
+        );
     }
 
     @Test(groups = "regression")
@@ -220,6 +236,25 @@ public class UserTest extends BaseTest {
         );
     }
 
+    @Test(groups = {"regression", "auth"})
+    @Story("删除用户接口权限")
+    @Severity(CRITICAL)
+    @Description("普通测试人员Token删除用户时，验证服务端返回权限不足")
+    public void deleteUserWithInsufficientPermissionTest() {
+        Response response = requestWithToken(
+                "tester-token",
+                () -> UserApi.deleteUser(1)
+        );
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                403,
+                403,
+                "权限不足",
+                "普通测试人员删除用户"
+        );
+    }
+
     @Test(groups = "regression")
     @Story("创建用户")
     @Severity(CRITICAL)
@@ -240,6 +275,11 @@ public class UserTest extends BaseTest {
         assertEquals(userResponse.getData().getId(), 4);
         assertEquals(userResponse.getData().getUsername(), "new-user");
         assertEquals(userResponse.getData().getRole(), "tester");
+
+        ApiAssertions.assertResponseMatchesSchema(
+                response,
+                "schemas/user-success-schema.json"
+        );
     }
 
     @Test(dataProvider = "blankUsernameData", groups = "regression")
@@ -362,6 +402,11 @@ public class UserTest extends BaseTest {
         assertEquals(
                 userListResponse.getData().getItems().getFirst().getUsername(),
                 "admin"
+        );
+
+        ApiAssertions.assertResponseMatchesSchema(
+                response,
+                "schemas/user-list-success-schema.json"
         );
     }
 
@@ -643,6 +688,96 @@ public class UserTest extends BaseTest {
                 401,
                 "未授权访问",
                 scenario
+        );
+    }
+
+    @Test(groups = {"regression", "auth"})
+    @Story("用户接口鉴权")
+    @Severity(CRITICAL)
+    @Description("验证Token过期时，接口返回专门的过期提示")
+    public void getUserWithExpiredTokenTest() {
+        Response response = requestWithToken("expired-token", UserApi::getUser);
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                401,
+                401,
+                "Token已过期",
+                "Token过期"
+        );
+    }
+
+    @Test(groups = {"regression", "auth"})
+    @Story("查询用户接口权限")
+    @Severity(CRITICAL)
+    @Description("普通测试人员Token查询用户时，验证具备读取权限")
+    public void getUserWithTesterPermissionTest() {
+        Response response = requestWithToken("tester-token", UserApi::getUser);
+
+        assertEquals(response.statusCode(), 200);
+        ApiAssertions.assertResponseMatchesSchema(
+                response,
+                "schemas/user-success-schema.json"
+        );
+    }
+
+    @Test(groups = "regression")
+    @Story("用户生命周期")
+    @Severity(CRITICAL)
+    @Description("创建、查询、更新、删除同一用户，验证接口状态按业务流程变化")
+    public void userLifecycleTest() {
+        Response createResponse = UserApi.createUser(
+                new CreateUserRequest("lifecycle-user", "tester")
+        );
+        assertEquals(createResponse.statusCode(), 201);
+
+        Response queryAfterCreateResponse = UserApi.getUserById(100);
+        assertEquals(queryAfterCreateResponse.statusCode(), 200);
+        ApiResponse<UserData> queryAfterCreate = queryAfterCreateResponse.as(
+                new TypeRef<ApiResponse<UserData>>() {
+                }
+        );
+        assertEquals(
+                queryAfterCreate.getData().getUsername(),
+                "lifecycle-user"
+        );
+
+        Response updateResponse = UserApi.updateUser(
+                100,
+                new CreateUserRequest("lifecycle-user-updated", "developer")
+        );
+        assertEquals(updateResponse.statusCode(), 200);
+        ApiResponse<UserData> updatedUser = updateResponse.as(
+                new TypeRef<ApiResponse<UserData>>() {
+                }
+        );
+        assertEquals(
+                updatedUser.getData().getRole(),
+                "developer"
+        );
+
+        Response queryAfterUpdateResponse = UserApi.getUserById(100);
+        ApiResponse<UserData> queryAfterUpdate = queryAfterUpdateResponse.as(
+                new TypeRef<ApiResponse<UserData>>() {
+                }
+        );
+        assertEquals(queryAfterUpdateResponse.statusCode(), 200);
+        assertEquals(
+                queryAfterUpdate.getData().getUsername(),
+                "lifecycle-user-updated"
+        );
+        assertEquals(queryAfterUpdate.getData().getRole(), "developer");
+
+        Response deleteResponse = UserApi.deleteUser(100);
+        assertEquals(deleteResponse.statusCode(), 204);
+
+        Response queryAfterDeleteResponse = UserApi.getUserById(100);
+        ApiAssertions.assertErrorResponse(
+                queryAfterDeleteResponse,
+                404,
+                404,
+                "用户不存在",
+                "删除后查询用户"
         );
     }
 

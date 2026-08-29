@@ -1,6 +1,7 @@
 package mock;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -9,6 +10,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 public final class LoginMockServer {
 
     private static final int PORT = 8089;
+
+    private static final String USER_LIFECYCLE_SCENARIO = "用户生命周期";
+    private static final String USER_CREATED = "用户已创建";
+    private static final String USER_UPDATED = "用户已更新";
+    private static final String USER_DELETED = "用户已删除";
 
     private static WireMockServer server;
 
@@ -701,6 +707,29 @@ public final class LoginMockServer {
                         .atPriority(1)
                         .withHeader(
                                 "Authorization",
+                                equalTo("Bearer tester-token")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(403)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 403,
+                                                  "message": "权限不足"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                delete(urlEqualTo("/users/1"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
                                 equalTo("Bearer test-token-123456")
                         )
                         .willReturn(aResponse().withStatus(204))
@@ -855,6 +884,57 @@ public final class LoginMockServer {
                         .atPriority(1)
                         .withHeader(
                                 "Authorization",
+                                equalTo("Bearer tester-token")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "success",
+                                                  "data": {
+                                                    "id": 1,
+                                                    "username": "admin",
+                                                    "role": "tester"
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlEqualTo("/users/1"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer expired-token")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(401)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 401,
+                                                  "message": "Token已过期"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlEqualTo("/users/1"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
                                 equalTo("Bearer test-token-123456")
                         )
                         .willReturn(
@@ -896,6 +976,184 @@ public final class LoginMockServer {
                         )
         );
 
+        server.stubFor(
+                post(urlEqualTo("/users"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withRequestBody(
+                                matchingJsonPath(
+                                        "$.username",
+                                        equalTo("lifecycle-user")
+                                )
+                        )
+                        .withRequestBody(
+                                matchingJsonPath("$.role", equalTo("tester"))
+                        )
+                        .inScenario(USER_LIFECYCLE_SCENARIO)
+                        .whenScenarioStateIs(Scenario.STARTED)
+                        .willSetStateTo(USER_CREATED)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(201)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "创建成功",
+                                                  "data": {
+                                                    "id": 100,
+                                                    "username": "lifecycle-user",
+                                                    "role": "tester"
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlEqualTo("/users/100"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .inScenario(USER_LIFECYCLE_SCENARIO)
+                        .whenScenarioStateIs(USER_CREATED)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "success",
+                                                  "data": {
+                                                    "id": 100,
+                                                    "username": "lifecycle-user",
+                                                    "role": "tester"
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                put(urlEqualTo("/users/100"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withRequestBody(
+                                matchingJsonPath(
+                                        "$.username",
+                                        equalTo("lifecycle-user-updated")
+                                )
+                        )
+                        .withRequestBody(
+                                matchingJsonPath("$.role", equalTo("developer"))
+                        )
+                        .inScenario(USER_LIFECYCLE_SCENARIO)
+                        .whenScenarioStateIs(USER_CREATED)
+                        .willSetStateTo(USER_UPDATED)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "更新成功",
+                                                  "data": {
+                                                    "id": 100,
+                                                    "username": "lifecycle-user-updated",
+                                                    "role": "developer"
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlEqualTo("/users/100"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .inScenario(USER_LIFECYCLE_SCENARIO)
+                        .whenScenarioStateIs(USER_UPDATED)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "success",
+                                                  "data": {
+                                                    "id": 100,
+                                                    "username": "lifecycle-user-updated",
+                                                    "role": "developer"
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                delete(urlEqualTo("/users/100"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .inScenario(USER_LIFECYCLE_SCENARIO)
+                        .whenScenarioStateIs(USER_UPDATED)
+                        .willSetStateTo(USER_DELETED)
+                        .willReturn(aResponse().withStatus(204))
+        );
+
+        server.stubFor(
+                get(urlEqualTo("/users/100"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .inScenario(USER_LIFECYCLE_SCENARIO)
+                        .whenScenarioStateIs(USER_DELETED)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(404)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 404,
+                                                  "message": "用户不存在"
+                                                }
+                                                """)
+                        )
+        );
+
 
         log.info(
                 "WireMock启动成功，端口：{}",
@@ -919,5 +1177,14 @@ public final class LoginMockServer {
         }finally {
             server = null;
         }
+    }
+
+    public static void resetScenarios() {
+        if (server == null || !server.isRunning()) {
+            throw new IllegalStateException("WireMock未启动，无法重置场景");
+        }
+
+        server.resetScenarios();
+        log.info("WireMock场景状态已重置");
     }
 }

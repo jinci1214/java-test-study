@@ -52,6 +52,27 @@ public class ApiAssertionsTest {
         );
     }
 
+    @Test
+    public void shouldRejectErrorResponseWithoutMessageField() {
+        Response response = new ResponseBuilder()
+                .setStatusCode(400)
+                .setContentType(ContentType.JSON)
+                .setBody("""
+                        {
+                          "code": 400
+                        }
+                        """)
+                .build();
+
+        Assert.expectThrows(
+                AssertionError.class,
+                () -> ApiAssertions.assertResponseMatchesSchema(
+                        response,
+                        "schemas/error-response-schema.json"
+                )
+        );
+    }
+
     private Response buildErrorResponse(
             int httpStatus,
             int businessCode,

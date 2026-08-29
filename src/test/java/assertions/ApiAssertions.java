@@ -5,9 +5,20 @@ import io.restassured.response.Response;
 import model.response.ApiResponse;
 import org.testng.Assert;
 
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+
 public final class ApiAssertions {
 
     private ApiAssertions() {
+    }
+
+    public static void assertResponseMatchesSchema(
+            Response response,
+            String schemaPath
+    ) {
+        response.then()
+                .assertThat()
+                .body(matchesJsonSchemaInClasspath(schemaPath));
     }
 
     public static void assertErrorResponse(
@@ -37,6 +48,11 @@ public final class ApiAssertions {
                 errorResponse.getMessage(),
                 expectedMessage,
                 scenario + "：错误消息不正确"
+        );
+
+        assertResponseMatchesSchema(
+                response,
+                "schemas/error-response-schema.json"
         );
 
     }
