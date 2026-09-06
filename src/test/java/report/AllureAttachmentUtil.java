@@ -7,6 +7,9 @@ import io.restassured.response.Response;
 import org.testng.ITestResult;
 import org.testng.Reporter;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+
 public final class AllureAttachmentUtil {
 
     private static final ObjectMapper OBJECT_MAPPER =
@@ -71,6 +74,43 @@ public final class AllureAttachmentUtil {
         );
     }
 
+    public static void attachMultipartRequest(
+            String method,
+            String url,
+            boolean hasAuthorization,
+            String fieldName,
+            File file,
+            String contentType
+    ) {
+
+        if (!hasActiveTest()) {
+            return;
+        }
+
+        String content = """
+                Method: %s
+                URL: %s
+                Authorization: %s
+                Multipart field: %s
+                File name: %s
+                File size: %d bytes
+                Content-Type: %s
+                """.formatted(
+                method,
+                url,
+                hasAuthorization ? "***" : "未携带",
+                fieldName,
+                file.getName(),
+                file.length(),
+                contentType
+        );
+
+        addTextAttachment(
+                "HTTP请求：" + method + "（multipart）",
+                content
+        );
+    }
+
     public static void attachDatabaseOperation(
             String operation,
             String sql,
@@ -98,6 +138,25 @@ public final class AllureAttachmentUtil {
         addTextAttachment(
                 "数据库操作：" + operation,
                 content
+        );
+    }
+
+    public static void attachFile(
+            String name,
+            String contentType,
+            String extension,
+            byte[] content
+    ) {
+
+        if (!hasActiveTest()) {
+            return;
+        }
+
+        Allure.addAttachment(
+                name,
+                contentType,
+                new ByteArrayInputStream(content),
+                extension
         );
     }
 

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="接口稳定性测试套件">
+
+    <test name="请求超时场景">
+
+        <groups>
+            <run>
+                <include name="stability"/>
+            </run>
+        </groups>
+
+        <packages>
+            <package name="common"/>
+            <package name="tests"/>
+        </packages>
+
+    </test>
+
+</suite>

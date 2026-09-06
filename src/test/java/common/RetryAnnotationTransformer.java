@@ -5,6 +5,7 @@ import org.testng.annotations.ITestAnnotation;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 public class RetryAnnotationTransformer
         implements IAnnotationTransformer {
@@ -17,8 +18,17 @@ public class RetryAnnotationTransformer
             Method testMethod
     ) {
 
-        annotation.setRetryAnalyzer(
-                TestRetryAnalyzer.class
-        );
+        boolean isRetryable = shouldEnableRetry(annotation.getGroups());
+
+        if (isRetryable) {
+            annotation.setRetryAnalyzer(
+                    TestRetryAnalyzer.class
+            );
+        }
+    }
+
+    static boolean shouldEnableRetry(String[] groups) {
+        return groups != null
+                && Arrays.asList(groups).contains("retryable");
     }
 }

@@ -1,5 +1,8 @@
 defaultEnvironment: mock
 
+performance:
+  maxResponseTimeMillis: 1000
+
 environments:
   mock:
     baseUrl: "http://localhost:8089"

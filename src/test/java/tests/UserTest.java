@@ -5,6 +5,7 @@ import assertions.ApiAssertions;
 import base.BaseTest;
 
 import common.TokenUtil;
+import config.Config;
 import io.qameta.allure.*;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.response.Response;
@@ -17,8 +18,11 @@ import model.response.UserPageData;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import report.AllureAttachmentUtil;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Supplier;
@@ -31,7 +35,7 @@ import static org.testng.Assert.*;
 @Feature("用户管理")
 public class UserTest extends BaseTest {
 
-    @BeforeMethod
+    @BeforeMethod(alwaysRun = true)
     public void resetMockScenarios() {
         LoginMockServer.resetScenarios();
     }
@@ -785,7 +789,7 @@ public class UserTest extends BaseTest {
         );
     }
 
-    @Test(groups = "regression")
+    @Test(groups = {"regression", "file"})
     @Story("上传用户文件")
     @Severity(CRITICAL)
     @Description("携带正确Token上传文本文件，验证服务端收到 multipart 文件内容")
@@ -818,7 +822,7 @@ public class UserTest extends BaseTest {
 
     @Test(
             dataProvider = "invalidTokenData",
-            groups = {"regression", "auth"}
+            groups = {"regression", "auth", "file"}
     )
     @Story("上传用户文件鉴权")
     @Severity(CRITICAL)
@@ -842,7 +846,7 @@ public class UserTest extends BaseTest {
         );
     }
 
-    @Test(groups = "regression")
+    @Test(groups = {"regression", "file"})
     @Story("上传用户文件")
     @Severity(CRITICAL)
     @Description("上传不支持的文件类型时，验证服务端返回媒体类型错误")
@@ -861,7 +865,82 @@ public class UserTest extends BaseTest {
         );
     }
 
-    @Test(groups = "regression")
+    @Test(groups = {"regression", "file"})
+    @Story("上传用户文件")
+    @Severity(CRITICAL)
+    @Description("上传空文件时，验证服务端拒绝该文件")
+    public void uploadEmptyUserFileTest() throws Exception {
+        Path emptyFile = createTemporaryTextFile("empty-user-file-", "");
+
+        try {
+            Response response = UserApi.uploadUserFile(emptyFile.toFile());
+
+            ApiAssertions.assertErrorResponse(
+                    response,
+                    400,
+                    400,
+                    "文件不能为空",
+                    "上传空文件"
+            );
+        } finally {
+            Files.deleteIfExists(emptyFile);
+        }
+    }
+
+    @Test(groups = {"regression", "file"})
+    @Story("上传用户文件")
+    @Severity(CRITICAL)
+    @Description("上传超过 1024 字节的文件时，验证服务端拒绝该文件")
+    public void uploadOversizedUserFileTest() throws Exception {
+        Path oversizedFile = createTemporaryTextFile(
+                "oversized-user-file-",
+                "a".repeat(1025)
+        );
+
+        try {
+            Response response = UserApi.uploadUserFile(oversizedFile.toFile());
+
+            ApiAssertions.assertErrorResponse(
+                    response,
+                    413,
+                    413,
+                    "文件大小超过限制",
+                    "上传超过大小限制的文件"
+            );
+        } finally {
+            Files.deleteIfExists(oversizedFile);
+        }
+    }
+
+    @Test(groups = {"regression", "file"})
+    @Story("上传用户文件")
+    @Severity(CRITICAL)
+    @Description("上传刚好 1024 字节的文件时，验证服务端允许该文件")
+    public void uploadUserFileAtMaximumSizeTest() throws Exception {
+        Path maximumSizeFile = createTemporaryTextFile(
+                "max-size-user-file-",
+                "a".repeat(1024)
+        );
+
+        try {
+            Response response = UserApi.uploadUserFile(maximumSizeFile.toFile());
+
+            assertEquals(response.statusCode(), 201);
+            ApiResponse<FileUploadData> uploadResponse = response.as(
+                    new TypeRef<ApiResponse<FileUploadData>>() {
+                    }
+            );
+            assertEquals(uploadResponse.getCode(), 0);
+            assertEquals(
+                    uploadResponse.getData().getFileName(),
+                    "max-size-sample.txt"
+            );
+        } finally {
+            Files.deleteIfExists(maximumSizeFile);
+        }
+    }
+
+    @Test(groups = {"regression", "file"})
     @Story("下载用户文件")
     @Severity(CRITICAL)
     @Description("携带正确Token下载文件，验证文件类型、文件名和文件内容")
@@ -877,7 +956,14 @@ public class UserTest extends BaseTest {
 
         Path downloadedFile = Files.createTempFile("downloaded-user-file-", ".txt");
         try {
-            Files.write(downloadedFile, response.asByteArray());
+            byte[] downloadedFileBytes = response.asByteArray();
+            AllureAttachmentUtil.attachFile(
+                    "下载文件：upload-sample.txt",
+                    "text/plain",
+                    ".txt",
+                    downloadedFileBytes
+            );
+            Files.write(downloadedFile, downloadedFileBytes);
             assertEquals(
                     Files.readString(downloadedFile),
                     "这是接口自动化上传测试文件。"
@@ -887,7 +973,38 @@ public class UserTest extends BaseTest {
         }
     }
 
-    @Test(groups = "regression")
+    @Test(groups = {"regression", "file"})
+    @Story("下载用户文件")
+    @Severity(CRITICAL)
+    @Description("下载二进制文件时，按原始字节验证文件内容没有被编码转换")
+    public void downloadBinaryUserFileTest() throws Exception {
+        byte[] expectedFileBytes = {0, 1, 2, 127, -128, -1};
+        Response response = UserApi.downloadUserFile("file-200");
+
+        assertEquals(response.statusCode(), 200);
+        assertEquals(response.getContentType(), "application/octet-stream");
+        assertEquals(
+                response.getHeader("Content-Disposition"),
+                "attachment; filename=binary-sample.bin"
+        );
+
+        Path downloadedFile = Files.createTempFile("downloaded-user-file-", ".bin");
+        try {
+            byte[] downloadedFileBytes = response.asByteArray();
+            AllureAttachmentUtil.attachFile(
+                    "下载文件：binary-sample.bin",
+                    "application/octet-stream",
+                    ".bin",
+                    downloadedFileBytes
+            );
+            Files.write(downloadedFile, downloadedFileBytes);
+            assertEquals(Files.readAllBytes(downloadedFile), expectedFileBytes);
+        } finally {
+            Files.deleteIfExists(downloadedFile);
+        }
+    }
+
+    @Test(groups = {"regression", "file"})
     @Story("下载用户文件")
     @Severity(CRITICAL)
     @Description("下载不存在的文件，验证服务端返回未找到错误")
@@ -903,9 +1020,93 @@ public class UserTest extends BaseTest {
         );
     }
 
+    @Test(groups = {"regression", "file"})
+    @Story("下载用户文件")
+    @Severity(CRITICAL)
+    @Description("文件下载服务发生内部错误时，验证服务端返回规范错误响应")
+    public void downloadUserFileServerErrorTest() {
+        Response response = UserApi.downloadUserFile("file-500");
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                500,
+                500,
+                "文件下载失败",
+                "文件下载服务异常"
+        );
+    }
+
+    @Test(groups = {"regression", "file"})
+    @Story("删除用户文件")
+    @Severity(CRITICAL)
+    @Description("删除文件后再次下载，验证文件状态已变为不存在")
+    public void deleteUserFileLifecycleTest() {
+        Response deleteResponse = UserApi.deleteUserFile("file-100");
+        assertEquals(deleteResponse.statusCode(), 204);
+
+        Response downloadResponse = UserApi.downloadUserFile("file-100");
+        ApiAssertions.assertErrorResponse(
+                downloadResponse,
+                404,
+                404,
+                "文件不存在",
+                "删除后下载文件"
+        );
+
+        Response repeatedDeleteResponse = UserApi.deleteUserFile("file-100");
+        ApiAssertions.assertErrorResponse(
+                repeatedDeleteResponse,
+                404,
+                404,
+                "文件不存在",
+                "重复删除文件"
+        );
+    }
+
+    @Test(groups = {"regression", "file"})
+    @Story("删除用户文件")
+    @Severity(CRITICAL)
+    @Description("删除不存在的文件时，验证服务端返回未找到错误")
+    public void deleteNonexistentUserFileTest() {
+        Response response = UserApi.deleteUserFile("missing-file");
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                404,
+                404,
+                "文件不存在",
+                "删除不存在的文件"
+        );
+    }
+
     @Test(
             dataProvider = "invalidTokenData",
-            groups = {"regression", "auth"}
+            groups = {"regression", "auth", "file"}
+    )
+    @Story("删除用户文件鉴权")
+    @Severity(CRITICAL)
+    @Description("验证缺少Token或Token错误时，文件删除接口拒绝访问")
+    public void deleteUserFileUnauthorizedTest(
+            String token,
+            String scenario
+    ) {
+        Response response = requestWithToken(
+                token,
+                () -> UserApi.deleteUserFile("file-100")
+        );
+
+        ApiAssertions.assertErrorResponse(
+                response,
+                401,
+                401,
+                "未授权访问",
+                scenario
+        );
+    }
+
+    @Test(
+            dataProvider = "invalidTokenData",
+            groups = {"regression", "auth", "file"}
     )
     @Story("下载用户文件鉴权")
     @Severity(CRITICAL)
@@ -937,6 +1138,30 @@ public class UserTest extends BaseTest {
         );
     }
 
+    private Path createTemporaryTextFile(
+            String prefix,
+            String content
+    ) throws IOException {
+        Path temporaryFile = Files.createTempFile(prefix, ".txt");
+        Files.writeString(temporaryFile, content);
+        return temporaryFile;
+    }
+
+    private boolean hasCause(
+            Throwable throwable,
+            Class<? extends Throwable> expectedCauseType
+    ) {
+        for (Throwable current = throwable;
+             current != null;
+             current = current.getCause()) {
+            if (expectedCauseType.isInstance(current)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private Response requestWithToken(
             String token,
             Supplier<Response> requestSender
@@ -958,6 +1183,55 @@ public class UserTest extends BaseTest {
                 TokenUtil.setToken(originalToken);
             }
         }
+    }
+
+    @Test(groups = {"performance", "retryable"})
+    @Story("查询用户信息性能")
+    @Severity(CRITICAL)
+    @Description("在本地Mock环境中验证查询用户接口响应时间不超过配置阈值")
+    public void getUserResponseTimeBaselineTest() {
+        Response response = UserApi.getUser();
+        long maxResponseTimeMillis = Config.getMaxResponseTimeMillis();
+        long actualResponseTimeMillis = response.time();
+
+        Allure.parameter("响应时间阈值（毫秒）", maxResponseTimeMillis);
+        Allure.parameter("实际响应时间（毫秒）", actualResponseTimeMillis);
+
+        assertEquals(response.statusCode(), 200);
+        assertTrue(
+                actualResponseTimeMillis < maxResponseTimeMillis,
+                "查询用户接口响应时间超过 "
+                        + maxResponseTimeMillis
+                        + " 毫秒："
+                        + actualResponseTimeMillis
+                        + " 毫秒"
+        );
+    }
+
+    @Test(groups = "stability")
+    @Story("查询用户接口超时")
+    @Severity(CRITICAL)
+    @Description("服务端响应超过单次请求超时时间时，验证客户端抛出读取超时异常")
+    public void getUserRequestTimeoutTest() {
+        Exception exception = expectThrows(
+                Exception.class,
+                () -> UserApi.getUserByIdWithTimeout(888, 100)
+        );
+
+        assertTrue(
+                hasCause(exception, SocketTimeoutException.class),
+                "请求未因读取超时失败：" + exception
+        );
+    }
+
+    @Test(groups = "stability")
+    @Story("查询用户接口超时")
+    @Severity(CRITICAL)
+    @Description("服务端响应在单次请求超时时间内完成时，验证客户端正常收到响应")
+    public void getSlowUserWithinTimeoutTest() {
+        Response response = UserApi.getUserByIdWithTimeout(888, 1500);
+
+        assertEquals(response.statusCode(), 200);
     }
 
 

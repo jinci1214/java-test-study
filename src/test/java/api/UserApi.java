@@ -27,6 +27,20 @@ public class UserApi {
         );
     }
 
+    public static Response getUserByIdWithTimeout(
+            long userId,
+            int timeoutMillis
+    ) {
+        validateUserId(userId);
+
+        return RequestUtil.getWithTimeout(
+                Config.getBaseUrl(),
+                "/users/" + userId,
+                true,
+                timeoutMillis
+        );
+    }
+
     public static Response createUser(CreateUserRequest request) {
         return RequestUtil.post(
                 Config.getBaseUrl(),
@@ -76,6 +90,14 @@ public class UserApi {
         return RequestUtil.get(
                 Config.getBaseUrl(),
                 "/files/" + fileId + "/download",
+                true
+        );
+    }
+
+    public static Response deleteUserFile(String fileId) {
+        return RequestUtil.delete(
+                Config.getBaseUrl(),
+                "/files/" + fileId,
                 true
         );
     }

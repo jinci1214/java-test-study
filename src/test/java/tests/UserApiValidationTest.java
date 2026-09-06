@@ -1,12 +1,21 @@
 package tests;
 
 import api.UserApi;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.expectThrows;
 
 public class UserApiValidationTest {
+
+    @DataProvider(name = "invalidTimeoutData")
+    public Object[][] invalidTimeoutData() {
+        return new Object[][]{
+                {0},
+                {-1}
+        };
+    }
 
     @Test(groups = "regression")
     public void shouldRejectNonPositivePage() {
@@ -26,6 +35,19 @@ public class UserApiValidationTest {
         );
 
         assertEquals(exception.getMessage(), "用户ID必须大于0");
+    }
+
+    @Test(
+            dataProvider = "invalidTimeoutData",
+            groups = {"regression", "stability"}
+    )
+    public void shouldRejectNonPositiveRequestTimeout(int timeoutMillis) {
+        IllegalArgumentException exception = expectThrows(
+                IllegalArgumentException.class,
+                () -> UserApi.getUserByIdWithTimeout(1, timeoutMillis)
+        );
+
+        assertEquals(exception.getMessage(), "超时时间必须是正数");
     }
 
     @Test(groups = "regression")

@@ -1,0 +1,43 @@
+name: Java Test Automation CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run automated test suites
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v6
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run regression suite
+        run: mvn --batch-mode -Pregression-test test
+
+      - name: Run performance suite
+        run: mvn --batch-mode -Pperformance-test test
+
+      - name: Run stability suite
+        run: mvn --batch-mode -Pstability-test test
+
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: target/allure-results
+          if-no-files-found: warn

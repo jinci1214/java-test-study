@@ -1,6 +1,8 @@
 package common;
 
 import config.Config;
+import io.restassured.config.HttpClientConfig;
+import io.restassured.config.RestAssuredConfig;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.slf4j.Logger;
@@ -42,6 +44,58 @@ public class RequestUtil {
                 path,
                 needAuth
         );
+    }
+
+    public static Response getWithTimeout(
+            String baseUrl,
+            String path,
+            boolean needAuth,
+            int timeoutMillis
+    ) {
+        if (timeoutMillis <= 0) {
+            throw new IllegalArgumentException("超时时间必须是正数");
+        }
+
+        boolean hasAuthorization =
+                needAuth && TokenUtil.hasToken();
+
+        AllureAttachmentUtil.attachRequest(
+                "GET",
+                baseUrl + path,
+                hasAuthorization,
+                "超时时间：" + timeoutMillis + " 毫秒"
+        );
+
+        log.info(
+                "发送HTTP请求：method=GET,url={},timeout={}ms",
+                baseUrl + path,
+                timeoutMillis
+        );
+        Response response = createRequest(baseUrl, needAuth)
+                .config(
+                        RestAssuredConfig.config().httpClient(
+                                HttpClientConfig.httpClientConfig()
+                                        .setParam(
+                                                "http.connection.timeout",
+                                                timeoutMillis
+                                        )
+                                        .setParam(
+                                                "http.socket.timeout",
+                                                timeoutMillis
+                                        )
+                        )
+                )
+                .when()
+                .get(path);
+
+        AllureAttachmentUtil.attachResponse("GET", response);
+
+        log.info(
+                "收到HTTP响应，method=GET,path={},status={}",
+                path,
+                response.statusCode()
+        );
+        return response;
     }
 
     public static Response get(
@@ -144,11 +198,13 @@ public class RequestUtil {
         boolean hasAuthorization =
                 needAuth && TokenUtil.hasToken();
 
-        AllureAttachmentUtil.attachRequest(
+        AllureAttachmentUtil.attachMultipartRequest(
                 "POST",
                 baseUrl + path,
                 hasAuthorization,
-                "上传文件：" + file.getName()
+                fieldName,
+                file,
+                contentType
         );
 
         log.info(

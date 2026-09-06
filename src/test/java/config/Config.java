@@ -79,7 +79,54 @@ public final  class Config {
 
         return baseUrl;
     }
+
+    @SuppressWarnings("unchecked")
+    public static long getMaxResponseTimeMillis() {
+        Map<String, Object> performance =
+                (Map<String, Object>) CONFIG.get("performance");
+
+        if (performance == null) {
+            throw new IllegalStateException(
+                    "配置文件中缺少 performance"
+            );
+        }
+
+        Object configuredValue =
+                performance.get("maxResponseTimeMillis");
+
+        if (!(configuredValue instanceof Number maxResponseTime)
+                || maxResponseTime.longValue() <= 0) {
+            throw new IllegalStateException(
+                    "performance.maxResponseTimeMillis 必须是正数"
+            );
+        }
+
+        String overrideValue =
+                System.getProperty("maxResponseTimeMillis");
+
+        if (overrideValue == null) {
+            return maxResponseTime.longValue();
+        }
+
+        try {
+            long overriddenMaxResponseTime =
+                    Long.parseLong(overrideValue);
+
+            if (overriddenMaxResponseTime <= 0) {
+                throw new IllegalArgumentException(
+                        "JVM 属性 maxResponseTimeMillis 必须是正整数："
+                                + overrideValue
+                );
+            }
+
+            return overriddenMaxResponseTime;
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException(
+                    "JVM 属性 maxResponseTimeMillis 必须是正整数："
+                            + overrideValue,
+                    exception
+            );
+        }
+    }
 }
-
-
 

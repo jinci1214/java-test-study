@@ -33,8 +33,7 @@ public class TestRetryAnalyzer implements IRetryAnalyzer {
              return false;
 
          }
-         if(retryCount < MAX_RETRY_COUNT){
-             retryCount++;
+         if(shouldRetry(throwable)){
              log.warn(
                      "检测到临时技术故障，准备重试：test={}, retry={}/{}",
                      result.getMethod().getMethodName(),
@@ -44,9 +43,25 @@ public class TestRetryAnalyzer implements IRetryAnalyzer {
              return true;
          }
 
+        log.warn(
+                "临时技术故障重试次数已耗尽：test={}, maxRetry={}",
+                result.getMethod().getMethodName(),
+                MAX_RETRY_COUNT
+        );
         return false;
     }
-    private boolean isRetryableException(Throwable throwable){
+
+    boolean shouldRetry(Throwable throwable) {
+        if (!isRetryableException(throwable)
+                || retryCount >= MAX_RETRY_COUNT) {
+            return false;
+        }
+
+        retryCount++;
+        return true;
+    }
+
+    static boolean isRetryableException(Throwable throwable){
         Throwable current = throwable;
 
         while(current != null){

@@ -15,6 +15,8 @@ public final class LoginMockServer {
     private static final String USER_CREATED = "用户已创建";
     private static final String USER_UPDATED = "用户已更新";
     private static final String USER_DELETED = "用户已删除";
+    private static final String FILE_LIFECYCLE_SCENARIO = "文件生命周期";
+    private static final String FILE_DELETED = "文件已删除";
 
     private static WireMockServer server;
 
@@ -881,6 +883,35 @@ public final class LoginMockServer {
         );
 
         server.stubFor(
+                get(urlEqualTo("/users/888"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withFixedDelay(1000)
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "success",
+                                                  "data": {
+                                                    "id": 888,
+                                                    "username": "slow-user",
+                                                    "role": "tester"
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
                 post(urlEqualTo("/files"))
                         .atPriority(20)
                         .willReturn(
@@ -931,12 +962,103 @@ public final class LoginMockServer {
         );
 
         server.stubFor(
+                post(urlEqualTo("/files"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withMultipartRequestBody(
+                                aMultipart()
+                                        .withName("file")
+                                        .withBody(equalTo(""))
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(400)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 400,
+                                                  "message": "文件不能为空"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                post(urlEqualTo("/files"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withMultipartRequestBody(
+                                aMultipart()
+                                        .withName("file")
+                                        .withBody(matching("a{1025,}"))
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(413)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 413,
+                                                  "message": "文件大小超过限制"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                post(urlEqualTo("/files"))
+                        .atPriority(2)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .withMultipartRequestBody(
+                                aMultipart()
+                                        .withName("file")
+                                        .withBody(matching("a{1024}"))
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(201)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 0,
+                                                  "message": "上传成功",
+                                                  "data": {
+                                                    "fileId": "file-101",
+                                                    "fileName": "max-size-sample.txt",
+                                                    "contentType": "text/plain"
+                                                  }
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
                 get(urlEqualTo("/files/file-100/download"))
                         .atPriority(1)
                         .withHeader(
                                 "Authorization",
                                 equalTo("Bearer test-token-123456")
                         )
+                        .inScenario(FILE_LIFECYCLE_SCENARIO)
+                        .whenScenarioStateIs(Scenario.STARTED)
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
@@ -949,6 +1071,133 @@ public final class LoginMockServer {
                                                 "attachment; filename=upload-sample.txt"
                                         )
                                         .withBody("这是接口自动化上传测试文件。")
+                        )
+        );
+
+        server.stubFor(
+                delete(urlEqualTo("/files/file-100"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .inScenario(FILE_LIFECYCLE_SCENARIO)
+                        .whenScenarioStateIs(Scenario.STARTED)
+                        .willSetStateTo(FILE_DELETED)
+                        .willReturn(aResponse().withStatus(204))
+        );
+
+        server.stubFor(
+                delete(urlEqualTo("/files/missing-file"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(404)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 404,
+                                                  "message": "文件不存在"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                delete(urlEqualTo("/files/file-100"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .inScenario(FILE_LIFECYCLE_SCENARIO)
+                        .whenScenarioStateIs(FILE_DELETED)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(404)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 404,
+                                                  "message": "文件不存在"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlEqualTo("/files/file-100/download"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .inScenario(FILE_LIFECYCLE_SCENARIO)
+                        .whenScenarioStateIs(FILE_DELETED)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(404)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 404,
+                                                  "message": "文件不存在"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                delete(urlPathMatching("/files/[^/]+"))
+                        .atPriority(20)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(401)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 401,
+                                                  "message": "未授权访问"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlEqualTo("/files/file-200/download"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/octet-stream"
+                                        )
+                                        .withHeader(
+                                                "Content-Disposition",
+                                                "attachment; filename=binary-sample.bin"
+                                        )
+                                        .withBody(new byte[]{0, 1, 2, 127, -128, -1})
                         )
         );
 
@@ -970,6 +1219,29 @@ public final class LoginMockServer {
                                                 {
                                                   "code": 404,
                                                   "message": "文件不存在"
+                                                }
+                                                """)
+                        )
+        );
+
+        server.stubFor(
+                get(urlEqualTo("/files/file-500/download"))
+                        .atPriority(1)
+                        .withHeader(
+                                "Authorization",
+                                equalTo("Bearer test-token-123456")
+                        )
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(500)
+                                        .withHeader(
+                                                "Content-Type",
+                                                "application/json"
+                                        )
+                                        .withBody("""
+                                                {
+                                                  "code": 500,
+                                                  "message": "文件下载失败"
                                                 }
                                                 """)
                         )
