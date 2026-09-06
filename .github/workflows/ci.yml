@@ -34,10 +34,22 @@ jobs:
       - name: Run stability suite
         run: mvn --batch-mode -Pstability-test test
 
+      - name: Generate Allure HTML report
+        if: always()
+        run: mvn --batch-mode allure:report
+
       - name: Upload Allure results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-results
           path: target/allure-results
+          if-no-files-found: warn
+
+      - name: Upload Allure HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-html-report
+          path: target/site/allure-maven-plugin
           if-no-files-found: warn
