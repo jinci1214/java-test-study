@@ -29,3 +29,7 @@ mvn -Pstability-test test
 ## CI
 
 推送到 `main`、创建 Pull Request，或在 GitHub Actions 页面手动运行工作流时，GitHub Actions 会执行测试并生成 Allure 报告产物。
+
+## 协作流程
+
+`main` 是受保护的主分支。开发时先从 `main` 创建功能分支，提交并推送改动后创建 Pull Request；只有 CI 检查通过后，才合并回 `main`。
