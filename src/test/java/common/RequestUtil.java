@@ -8,6 +8,7 @@ import io.restassured.specification.RequestSpecification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import report.AllureAttachmentUtil;
+import validation.TimeoutValidator;
 
 import java.io.File;
 
@@ -52,9 +53,7 @@ public class RequestUtil {
             boolean needAuth,
             int timeoutMillis
     ) {
-        if (timeoutMillis <= 0) {
-            throw new IllegalArgumentException("超时时间必须是正数");
-        }
+        TimeoutValidator.validate(timeoutMillis);
 
         boolean hasAuthorization =
                 needAuth && TokenUtil.hasToken();
