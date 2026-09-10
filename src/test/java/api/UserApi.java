@@ -5,6 +5,10 @@ import common.RequestUtil;
 import config.Config;
 import io.restassured.response.Response;
 import model.request.CreateUserRequest;
+import validation.PaginationValidator;
+import validation.RoleValidator;
+import validation.UserIdValidator;
+import validation.UsernameSortOrderValidator;
 
 import java.io.File;
 
@@ -18,7 +22,7 @@ public class UserApi {
     }
 
     public static Response getUserById(long userId) {
-        validateUserId(userId);
+        UserIdValidator.validate(userId);
 
         return RequestUtil.get(
                 Config.getBaseUrl(),
@@ -31,7 +35,7 @@ public class UserApi {
             long userId,
             int timeoutMillis
     ) {
-        validateUserId(userId);
+        UserIdValidator.validate(userId);
 
         return RequestUtil.getWithTimeout(
                 Config.getBaseUrl(),
@@ -51,7 +55,7 @@ public class UserApi {
     }
 
     public static Response updateUser(long userId, CreateUserRequest request) {
-        validateUserId(userId);
+        UserIdValidator.validate(userId);
 
         return RequestUtil.put(
                 Config.getBaseUrl(),
@@ -62,7 +66,7 @@ public class UserApi {
     }
 
     public static Response deleteUser(long userId) {
-        validateUserId(userId);
+        UserIdValidator.validate(userId);
 
         return RequestUtil.delete(
                 Config.getBaseUrl(),
@@ -103,7 +107,7 @@ public class UserApi {
     }
 
     public static Response getUsers(int page, int pageSize) {
-        validatePaging(page, pageSize);
+        PaginationValidator.validate(page, pageSize);
 
         return RequestUtil.get(
                 Config.getBaseUrl(),
@@ -117,8 +121,8 @@ public class UserApi {
             int pageSize,
             String role
     ) {
-        validatePaging(page, pageSize);
-        validateRole(role);
+        PaginationValidator.validate(page, pageSize);
+        RoleValidator.validate(role);
 
         return RequestUtil.get(
                 Config.getBaseUrl(),
@@ -136,8 +140,8 @@ public class UserApi {
             int pageSize,
             String sortOrder
     ) {
-        validatePaging(page, pageSize);
-        validateUsernameSortOrder(sortOrder);
+        PaginationValidator.validate(page, pageSize);
+        UsernameSortOrderValidator.validate(sortOrder);
 
         return RequestUtil.get(
                 Config.getBaseUrl(),
@@ -153,9 +157,9 @@ public class UserApi {
             String role,
             String sortOrder
     ) {
-        validatePaging(page, pageSize);
-        validateRole(role);
-        validateUsernameSortOrder(sortOrder);
+        PaginationValidator.validate(page, pageSize);
+        RoleValidator.validate(role);
+        UsernameSortOrderValidator.validate(sortOrder);
 
         return RequestUtil.get(
                 Config.getBaseUrl(),
@@ -163,34 +167,6 @@ public class UserApi {
                         .formatted(page, pageSize, role, sortOrder),
                 true
         );
-    }
-
-    private static void validatePaging(int page, int pageSize) {
-        if (page <= 0) {
-            throw new IllegalArgumentException("页码必须大于0");
-        }
-
-        if (pageSize <= 0) {
-            throw new IllegalArgumentException("每页数量必须大于0");
-        }
-    }
-
-    private static void validateUserId(long userId) {
-        if (userId <= 0) {
-            throw new IllegalArgumentException("用户ID必须大于0");
-        }
-    }
-
-    private static void validateRole(String role) {
-        if (role == null || role.isBlank()) {
-            throw new IllegalArgumentException("筛选角色不能为空");
-        }
-    }
-
-    private static void validateUsernameSortOrder(String sortOrder) {
-        if (!"asc".equals(sortOrder) && !"desc".equals(sortOrder)) {
-            throw new IllegalArgumentException("用户名排序方向只能是 asc 或 desc");
-        }
     }
 
 }
