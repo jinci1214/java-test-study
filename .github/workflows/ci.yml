@@ -26,7 +26,7 @@ jobs:
           cache: maven
 
       - name: Run regression suite
-        run: mvn --batch-mode -Pregression-test test
+        run: mvn --batch-mode -Pregression-test verify
 
       - name: Run performance suite
         run: mvn --batch-mode -Pperformance-test test
@@ -52,4 +52,12 @@ jobs:
         with:
           name: allure-html-report
           path: target/site/allure-maven-plugin
+          if-no-files-found: warn
+
+      - name: Upload JaCoCo HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-html-report
+          path: target/site/jacoco
           if-no-files-found: warn
