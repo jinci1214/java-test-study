@@ -129,4 +129,24 @@ public class TestUserRepositoryValidationTest {
 
         assertEquals(exception.getMessage(), "测试用户名不能为空");
     }
+
+    @Test(groups = "database")
+    public void shouldRejectBlankRoleWhenCountingBeforeAccessingDatabase() {
+        IllegalArgumentException exception = expectThrows(
+                IllegalArgumentException.class,
+                () -> TestUserRepository.countByRole(" ")
+        );
+
+        assertEquals(exception.getMessage(), "查询用户角色不能为空");
+    }
+
+    @Test(groups = "database")
+    public void shouldRejectNullConnectionWhenCounting() {
+        IllegalArgumentException exception = expectThrows(
+                IllegalArgumentException.class,
+                () -> TestUserRepository.countByRole(null, "tester")
+        );
+
+        assertEquals(exception.getMessage(), "数据库连接不能为空");
+    }
 }

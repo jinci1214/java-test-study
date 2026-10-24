@@ -13,6 +13,8 @@
 
         <packages>
             <package name="tests"/>
+            <package name="application.health"/>
+            <package name="application.user"/>
         </packages>
 
     </test>

@@ -7,6 +7,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -40,6 +43,12 @@ public final class TestUserRepository {
             UPDATE test_users
             SET role = ?
             WHERE id = ?
+            """;
+
+    private static final String COUNT_BY_ROLE_SQL = """
+            SELECT COUNT(*) AS user_count
+            FROM test_users
+            WHERE role = ?
             """;
 
     private TestUserRepository() {
@@ -102,6 +111,66 @@ public final class TestUserRepository {
 
             throw new IllegalStateException(
                     "新增测试用户失败：username=" + user.username(),
+                    exception
+            );
+        }
+    }
+
+    public static int[] createBatch(
+            Connection connection,
+            List<TestUser> users
+    ) {
+        validateConnection(connection);
+
+        if (users == null || users.isEmpty()) {
+            throw new IllegalArgumentException("批量新增的用户不能为空");
+        }
+
+        users.forEach(TestUserRepository::validateUser);
+
+        try (PreparedStatement statement =
+                     connection.prepareStatement(INSERT_SQL)) {
+            for (TestUser user : users) {
+                statement.setLong(1, user.id());
+                statement.setString(2, user.username());
+                statement.setString(3, user.role());
+                statement.addBatch();
+            }
+
+            int[] affectedRows = statement.executeBatch();
+
+            for (int affectedRow : affectedRows) {
+                if (affectedRow != 1
+                        && affectedRow != Statement.SUCCESS_NO_INFO) {
+                    throw new IllegalStateException(
+                            "批量新增测试用户失败，单条影响行数："
+                                    + affectedRow
+                    );
+                }
+            }
+
+            AllureAttachmentUtil.attachDatabaseOperation(
+                    "批量新增测试用户",
+                    INSERT_SQL,
+                    "users=" + users,
+                    "各条影响行数=" + Arrays.toString(affectedRows)
+            );
+
+            return affectedRows;
+        } catch (SQLException exception) {
+            AllureAttachmentUtil.attachDatabaseOperation(
+                    "批量新增测试用户（失败）",
+                    INSERT_SQL,
+                    "users=" + users,
+                    "异常类型=%s%nSQLState=%s%n错误信息=%s".formatted(
+                            exception.getClass().getSimpleName(),
+                            exception.getSQLState(),
+                            exception.getMessage()
+                    )
+            );
+
+            throw new IllegalStateException(
+                    "批量新增测试用户失败",
                     exception
             );
         }
@@ -250,23 +319,28 @@ public final class TestUserRepository {
     }
 
     public static void updateRole(long id, String role) {
-        if (id <= 0) {
-            throw new IllegalArgumentException(
-                    "更新用户的id必须大于0"
+        validateRoleUpdate(id, role);
+
+        try (Connection connection = JdbcUtil.getConnection()) {
+            updateRole(connection, id, role);
+        } catch (SQLException exception) {
+            throw new IllegalStateException(
+                    "更新测试用户角色失败：id=" + id,
+                    exception
             );
         }
+    }
 
-        if (role == null || role.isBlank()) {
-            throw new IllegalArgumentException(
-                    "更新后的用户角色不能为空"
-            );
-        }
+    public static void updateRole(
+            Connection connection,
+            long id,
+            String role
+    ) {
+        validateConnection(connection);
+        validateRoleUpdate(id, role);
 
-        try (
-                Connection connection = JdbcUtil.getConnection();
-                PreparedStatement statement =
-                        connection.prepareStatement(UPDATE_ROLE_SQL)
-        ) {
+        try (PreparedStatement statement =
+                     connection.prepareStatement(UPDATE_ROLE_SQL)) {
             statement.setString(1, role);
             statement.setLong(2, id);
 
@@ -298,6 +372,75 @@ public final class TestUserRepository {
             throw new IllegalStateException(
                     "更新测试用户角色失败：id=" + id,
                     exception
+            );
+        }
+    }
+
+    public static long countByRole(String role) {
+        validateQueryRole(role);
+
+        try (Connection connection = JdbcUtil.getConnection()) {
+            return countByRole(connection, role);
+        } catch (SQLException exception) {
+            throw new IllegalStateException(
+                    "按角色统计测试用户失败：role=" + role,
+                    exception
+            );
+        }
+    }
+
+    public static long countByRole(Connection connection, String role) {
+        validateConnection(connection);
+        validateQueryRole(role);
+
+        try (PreparedStatement statement =
+                     connection.prepareStatement(COUNT_BY_ROLE_SQL)) {
+            statement.setString(1, role);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    throw new IllegalStateException(
+                            "按角色统计测试用户未返回结果：role=" + role
+                    );
+                }
+
+                long userCount = resultSet.getLong("user_count");
+
+                AllureAttachmentUtil.attachDatabaseOperation(
+                        "按角色统计测试用户",
+                        COUNT_BY_ROLE_SQL,
+                        "role=" + role,
+                        "用户数量=" + userCount
+                );
+
+                return userCount;
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException(
+                    "按角色统计测试用户失败：role=" + role,
+                    exception
+            );
+        }
+    }
+
+    private static void validateRoleUpdate(long id, String role) {
+        if (id <= 0) {
+            throw new IllegalArgumentException(
+                    "更新用户的id必须大于0"
+            );
+        }
+
+        if (role == null || role.isBlank()) {
+            throw new IllegalArgumentException(
+                    "更新后的用户角色不能为空"
+            );
+        }
+    }
+
+    private static void validateQueryRole(String role) {
+        if (role == null || role.isBlank()) {
+            throw new IllegalArgumentException(
+                    "查询用户角色不能为空"
             );
         }
     }
