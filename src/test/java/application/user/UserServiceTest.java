@@ -1,5 +1,6 @@
 package application.user;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.expectThrows;
 
 public class UserServiceTest {
@@ -84,6 +86,27 @@ public class UserServiceTest {
         assertEquals(exception.getMessage(), "用户名已存在：admin");
         verify(userRepository).findByUsername("admin");
         verify(userRepository, never()).create("admin", "tester");
+    }
+
+    @Test(groups = {"spring", "regression"})
+    public void shouldConvertDuplicateKeyDuringCreate() {
+        DuplicateKeyException databaseException =
+                new DuplicateKeyException("duplicate username");
+        when(userRepository.findByUsername("racing-user"))
+                .thenReturn(Optional.empty());
+        when(userRepository.create("racing-user", "tester"))
+                .thenThrow(databaseException);
+
+        UserAlreadyExistsException exception = expectThrows(
+                UserAlreadyExistsException.class,
+                () -> userService.create("racing-user", "tester")
+        );
+
+        assertEquals(
+                exception.getMessage(),
+                "用户名已存在：racing-user"
+        );
+        assertSame(exception.getCause(), databaseException);
     }
 
     @Test(groups = {"spring", "regression"})
@@ -163,6 +186,40 @@ public class UserServiceTest {
         verify(userRepository).findByUsername("admin");
         verify(userRepository, never())
                 .update(3L, "admin", "tester");
+    }
+
+    @Test(groups = {"spring", "regression"})
+    public void shouldConvertDuplicateKeyDuringUpdate() {
+        UserResponse existingUser =
+                new UserResponse(3L, "old-user", "tester");
+        DuplicateKeyException databaseException =
+                new DuplicateKeyException("duplicate username");
+        when(userRepository.findById(3L))
+                .thenReturn(Optional.of(existingUser));
+        when(userRepository.findByUsername("racing-user"))
+                .thenReturn(Optional.empty());
+        when(
+                userRepository.update(
+                        3L,
+                        "racing-user",
+                        "administrator"
+                )
+        ).thenThrow(databaseException);
+
+        UserAlreadyExistsException exception = expectThrows(
+                UserAlreadyExistsException.class,
+                () -> userService.update(
+                        3L,
+                        "racing-user",
+                        "administrator"
+                )
+        );
+
+        assertEquals(
+                exception.getMessage(),
+                "用户名已存在：racing-user"
+        );
+        assertSame(exception.getCause(), databaseException);
     }
 
     @Test(groups = {"spring", "regression"})

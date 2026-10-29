@@ -1,5 +1,6 @@
 package application.user;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testng.annotations.BeforeMethod;
@@ -11,6 +12,7 @@ import java.util.UUID;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 public class JdbcUserRepositoryTest {
 
@@ -85,5 +87,18 @@ public class JdbcUserRepositoryTest {
                         .isEmpty()
         );
         assertFalse(userRepository.delete(999L));
+    }
+
+    @Test(groups = {"spring", "regression"})
+    public void shouldRejectDuplicateUsernameAtDatabaseLevel() {
+        userRepository.create("duplicate-user", "tester");
+
+        expectThrows(
+                DuplicateKeyException.class,
+                () -> userRepository.create(
+                        "duplicate-user",
+                        "administrator"
+                )
+        );
     }
 }

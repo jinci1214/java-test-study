@@ -1,5 +1,6 @@
 package application.user;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,7 +27,11 @@ public class UserService {
         if (userRepository.findByUsername(username).isPresent()) {
             throw new UserAlreadyExistsException(username);
         }
-        return userRepository.create(username, role);
+        try {
+            return userRepository.create(username, role);
+        } catch (DuplicateKeyException exception) {
+            throw new UserAlreadyExistsException(username, exception);
+        }
     }
 
     public UserResponse update(
@@ -40,8 +45,12 @@ public class UserService {
                 .ifPresent(user -> {
                     throw new UserAlreadyExistsException(username);
                 });
-        return userRepository.update(id, username, role)
-                .orElseThrow(() -> new UserNotFoundException(id));
+        try {
+            return userRepository.update(id, username, role)
+                    .orElseThrow(() -> new UserNotFoundException(id));
+        } catch (DuplicateKeyException exception) {
+            throw new UserAlreadyExistsException(username, exception);
+        }
     }
 
     public void delete(long id) {
